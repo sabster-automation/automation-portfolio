@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+test-results.xml
+junit.xml
+
+# Env files - keep example, ignore real
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.cursor/
+
+# Build
+dist/
+coverage/
