@@ -141,7 +141,7 @@ Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with 
 
 **In Progress / Next (Q4 2026):**
 
-- [ ] **Second real AUT** — add `automationexercise.com` (different stack: pagination, file upload, payment iframe) to prove AUT-agnostic framework design
+- [x] **Second real AUT** — `demoqa.com` — *WIP*: Practice Form (`tests/e2e/demoqa-practice-form.wip.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — pagination, file upload, date picker, modal (see WIP test) → proves AUT-agnostic design vs SauceDemo e-commerce
 - [ ] **Contract & schema validation** — Zod schemas for `jsonplaceholder` / `reqres` responses + snapshot API (shows API quality beyond status codes)
 - [ ] **Test data factories** — `@faker-js/faker` + `test-data/factories.ts` for checkout/customer, per-env seeding via API (replace hardcoded `users.ts`)
 
