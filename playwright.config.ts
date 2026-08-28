@@ -44,20 +44,30 @@ export default defineConfig({
     },
     {
       name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
+      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
+    },
+    {
+      name: 'chromium-auth',
       use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
       dependencies: ['setup'],
+      testMatch: /.*(inventory|checkout).*\.spec\.ts/,
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
     },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
+      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
     },
     {
       name: 'visual',
