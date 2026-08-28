@@ -135,4 +135,31 @@ Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with 
 
 ---
 
+## 🗺️ Roadmap — What's Next
+
+> This is a live portfolio — not a finished product. Items below are planned as realistic interview talking points.
+
+**In Progress / Next (Q4 2026):**
+
+- [ ] **Second real AUT** — add `automationexercise.com` (different stack: pagination, file upload, payment iframe) to prove AUT-agnostic framework design
+- [ ] **Contract & schema validation** — Zod schemas for `jsonplaceholder` / `reqres` responses + snapshot API (shows API quality beyond status codes)
+- [ ] **Test data factories** — `@faker-js/faker` + `test-data/factories.ts` for checkout/customer, per-env seeding via API (replace hardcoded `users.ts`)
+
+**Up Next:**
+
+- [ ] **Performance budgets** — `responseTime < 800ms` assertions + Lighthouse CI for cart/checkout (perf as quality gate)
+- [ ] **Mobile + cross-browser hardening** — `mobile-chrome`/`webkit` in nightly matrix + BrowserStack connector example
+- [ ] **Security smoke** — negative tests: XSS payload in checkout fields, lockout brute-force, `storageState` isolation proof
+- [ ] **Flaky-test quarantine** — `test.fail()` + `allure` history trend + Slack webhook on nightly failure
+
+**Nice to have / Ideas:**
+
+- [ ] Dark-mode visual baselines + `prefers-color-scheme` checks
+- [ ] Component testing for design system (Storybook + Playwright CT)
+- [ ] Load smoke with `k6` wired to same `ENV` config
+
+Contributions/PRs that implement a roadmap item are welcome — see `tests/` for patterns.
+
+---
+
 Built to be forked and discussed in interviews. Happy testing! 🎭
