@@ -29,9 +29,10 @@ test.describe('API Tests @api', () => {
       body: 'API testing as Test Automation Engineer',
       userId: 1,
     };
-    const response = await request.post(`${apiBase}/posts`, {
-      data: apiBase.includes('reqres') ? { name: 'Playwright', job: 'QA Engineer' } : newPost,
-    });
+    const isReqres = apiBase.includes('reqres');
+    const endpoint = isReqres ? `${apiBase}/users` : `${apiBase}/posts`;
+    const payload = isReqres ? { name: 'Playwright', job: 'QA Engineer' } : newPost;
+    const response = await request.post(endpoint, { data: payload });
     expect([200, 201]).toContain(response.status());
     const created = await response.json();
     expect(created).toBeTruthy();
@@ -49,16 +50,20 @@ test.describe('API Tests @api', () => {
   });
 
   test('API chaining - create then fetch', async ({ request }) => {
-    const createRes = await request.post(`${apiBase}/posts`, {
-      data: { title: 'Chain test', body: 'chaining', userId: 1 },
-    });
+    const isReqres = apiBase.includes('reqres');
+    const createEndpoint = isReqres ? `${apiBase}/users` : `${apiBase}/posts`;
+    const payload = isReqres ? { name: 'Chain', job: 'chaining' } : { title: 'Chain test', body: 'chaining', userId: 1 };
+    const createRes = await request.post(createEndpoint, { data: payload });
     expect([200, 201]).toContain(createRes.status());
     const created = await createRes.json();
-    const id = created.id || 1;
-    const getRes = await request.get(`${apiBase}/posts/${id}`);
+    expect(created.id || created.createdAt).toBeTruthy();
+    // jsonplaceholder doesn't persist 101, so verify by fetching known id instead
+    const getEndpoint = isReqres ? `${apiBase}/users/1` : `${apiBase}/posts/1`;
+    const getRes = await request.get(getEndpoint);
     expect(getRes.ok()).toBeTruthy();
     const fetched = await getRes.json();
-    expect(fetched).toHaveProperty('id');
+    const data = (fetched as any).data || fetched;
+    expect(data).toHaveProperty('id');
   });
 
   test('validate response time < 2s', async ({ request }) => {
@@ -69,7 +74,7 @@ test.describe('API Tests @api', () => {
     expect(duration).toBeLessThan(2000);
   });
 
-  test('SauceDemo API - login via API (form simulation)', async ({ request, page }) => {
+  test('SauceDemo API - login via API (form simulation)', async ({ request }) => {
     const response = await request.get('https://www.saucedemo.com/');
     expect(response.status()).toBe(200);
     const html = await response.text();
