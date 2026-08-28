@@ -17,6 +17,7 @@ export default defineConfig({
   reporter: [
     ['html', { open: 'never' }],
     ['junit', { outputFile: 'test-results/junit.xml' }],
+    ['allure-playwright', { outputFolder: 'allure-results' }],
     ['list'],
   ],
   timeout: 30 * 1000,
@@ -36,9 +37,15 @@ export default defineConfig({
     navigationTimeout: 30_000,
   },
   projects: [
+    // Setup project - runs first and creates storageState
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
@@ -61,6 +68,11 @@ export default defineConfig({
       name: 'api',
       use: { baseURL: undefined },
       testMatch: /.*api.*\.spec\.ts/,
+    },
+    {
+      name: 'a11y',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /.*a11y.*\.spec\.ts/,
     },
   ],
 });
