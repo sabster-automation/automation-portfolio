@@ -34,7 +34,7 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Run Playwright tests
-        run: ENV=${{ matrix.env }} npx playwright test --project=${{ matrix.project }}
+        run: ENV=${{ matrix.env }} npx playwright test --project=${{ matrix.project }} --reporter=html,allure-playwright,junit
         env:
           ENV: ${{ matrix.env }}
           CI: true
@@ -44,6 +44,13 @@ jobs:
         with:
           name: playwright-report-${{ matrix.env }}-${{ matrix.project }}
           path: playwright-report/
+          retention-days: 30
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-${{ matrix.env }}-${{ matrix.project }}
+          path: allure-results/
           retention-days: 30
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
