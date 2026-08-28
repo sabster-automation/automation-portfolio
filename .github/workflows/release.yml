@@ -1,0 +1,126 @@
+name: Release with Reports
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.1)'
+        required: false
+        default: ''
+      prerelease:
+        description: 'Mark as prerelease'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-build-reports:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests (chromium + api + a11y)
+        run: npx playwright test --project=chromium --project=api --project=a11y --reporter=html,allure-playwright,junit
+        env:
+          CI: true
+
+      - name: Generate Allure report
+        if: always()
+        run: |
+          npm i -g allure-commandline
+          allure generate allure-results --clean -o allure-report || echo "no allure results"
+
+      - name: Prepare release assets
+        if: always()
+        run: |
+          mkdir -p release-assets
+          # Zip HTML report
+          if [ -d "playwright-report" ]; then zip -r release-assets/playwright-report.zip playwright-report; fi
+          if [ -d "allure-report" ]; then zip -r release-assets/allure-report.zip allure-report; fi
+          if [ -d "allure-results" ]; then zip -r release-assets/allure-results.zip allure-results; fi
+          if [ -f "test-results/junit.xml" ]; then cp test-results/junit.xml release-assets/junit.xml; fi
+          # Create summary markdown
+          cat > release-assets/REPORT_SUMMARY.md << 'EOF'
+          # Automation Report
+          - **Commit:** ${{ github.sha }}
+          - **Workflow:** ${{ github.workflow }}
+          - **Run:** ${{ github.run_id }}
+          - **Date:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          ## Reports included
+          - `playwright-report.zip` - Playwright HTML report (open `index.html`)
+          - `allure-report.zip` - Allure HTML report
+          - `allure-results.zip` - Raw Allure results
+          - `junit.xml` - JUnit XML for CI dashboards
+          EOF
+          cat release-assets/REPORT_SUMMARY.md
+          ls -lh release-assets/
+
+      - name: Upload artifacts (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+          retention-days: 30
+
+      # Determine tag name
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "value=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "value=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "value=report-${{ github.run_number }}-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+          fi
+          cat $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: "Automation Report ${{ steps.tag.outputs.value }}"
+          body: |
+            ## 🎭 Playwright Automation Report
+
+            **Commit:** `${{ github.sha }}`
+            **Branch:** `${{ github.ref_name }}`
+            **Workflow run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            **Date:** ${{ github.event.head_commit.timestamp }}
+
+            ### 📦 Assets
+            - **playwright-report.zip** — Playwright HTML report (`npx playwright show-report` or open `index.html`)
+            - **allure-report.zip** — Allure report (`allure open allure-report`)
+            - **junit.xml** — JUnit for dashboards
+            - **Allure Pages:** https://sebastian-cichon.github.io/playwright-automation-showcase/
+
+            ### 🧪 Included suites
+            - E2E (auth, inventory, checkout) — Chromium
+            - API (jsonplaceholder / reqres)
+            - a11y (axe-core WCAG 2.1)
+            - Visual baselines (manual via `visual` project)
+
+            > Generated automatically by `.github/workflows/release.yml`
+          files: release-assets/*
+          prerelease: ${{ inputs.prerelease == 'true' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
