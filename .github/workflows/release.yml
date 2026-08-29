@@ -110,7 +110,7 @@ jobs:
             - **playwright-report.zip** — Playwright HTML report (`npx playwright show-report` or open `index.html`)
             - **allure-report.zip** — Allure report (`allure open allure-report`)
             - **junit.xml** — JUnit for dashboards
-            - **Allure Pages:** https://sebastian-cichon.github.io/playwright-automation-showcase/
+            - **Allure Pages:** https://sabster-automation.github.io/playwright-automation-showcase/
 
             ### 🧪 Included suites
             - E2E (auth, inventory, checkout) — Chromium

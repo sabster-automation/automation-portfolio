@@ -2,8 +2,8 @@
 
 > Production-grade **Playwright + TypeScript** framework showcasing E2E, API, **Visual Regression**, **Accessibility** & **Allure Reporting** across **multiple environments** — built on real-world apps.
 
-[![Playwright Tests](https://github.com/sebastian-cichon/playwright-automation-showcase/actions/workflows/playwright.yml/badge.svg)](https://github.com/sebastian-cichon/playwright-automation-showcase/actions/workflows/playwright.yml)
-[![Allure Report](https://github.com/sebastian-cichon/playwright-automation-showcase/actions/workflows/allure-pages.yml/badge.svg)](https://sebastian-cichon.github.io/playwright-automation-showcase/)
+[![Playwright Tests](https://github.com/sabster-automation/playwright-automation-showcase/actions/workflows/playwright.yml/badge.svg)](https://github.com/sabster-automation/playwright-automation-showcase/actions/workflows/playwright.yml)
+[![Allure Report](https://github.com/sabster-automation/playwright-automation-showcase/actions/workflows/allure-pages.yml/badge.svg)](https://sabster-automation.github.io/playwright-automation-showcase/)
 ![Playwright](https://img.shields.io/badge/Playwright-1.49-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
 ![Visual Regression](https://img.shields.io/badge/Visual-Regression-purple)
@@ -29,7 +29,7 @@
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/sebastian-cichon/playwright-automation-showcase.git
+git clone https://github.com/sabster-automation/playwright-automation-showcase.git
 cd playwright-automation-showcase
 npm ci
 npx playwright install --with-deps
@@ -104,7 +104,7 @@ npm run test:allure          # generates allure-results
 npm run report:allure        # serves allure-report locally
 ```
 
-CI: `allure-pages.yml` publishes to **GitHub Pages** → https://sebastian-cichon.github.io/playwright-automation-showcase/ (enable Pages: Settings → Pages → Source: GitHub Actions).
+CI: `allure-pages.yml` publishes to **GitHub Pages** → https://sabster-automation.github.io/playwright-automation-showcase/ (enable Pages: Settings → Pages → Source: GitHub Actions).
 
 ## 🚀 Releases — Automation Reports
 
@@ -131,7 +131,7 @@ git tag v1.0.0 && git push origin v1.0.0
 
 Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with `html,allure-playwright,junit` reporters, builds `allure-report`, zips assets, and creates the Release via `softprops/action-gh-release`.
 
-> The latest release is linkable in your CV: `https://github.com/sebastian-cichon/playwright-automation-showcase/releases/latest` → shows stakeholders the actual HTML report.
+> The latest release is linkable in your CV: `https://github.com/sabster-automation/playwright-automation-showcase/releases/latest` → shows stakeholders the actual HTML report.
 
 ---
 
