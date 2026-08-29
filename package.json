@@ -1,5 +1,5 @@
 {
-  "name": "playwright-automation-showcase",
+  "name": "automation-portfolio",
   "version": "1.0.0",
   "description": "Portfolio showcase for Test Automation Engineer - Playwright + TypeScript with Visual Regression & Multi-Environment support",
   "private": true,
