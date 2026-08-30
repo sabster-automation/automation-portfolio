@@ -186,7 +186,7 @@ test('with seeded customer', async ({ seededCustomer }) => {
 - [x] **Second real AUT** — `demoqa.com` — Practice Form (`tests/e2e/demoqa-practice-form.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — file upload, date picker, react-select, modal → proves AUT-agnostic design vs SauceDemo e-commerce
 - [x] **Test data factories** — `@faker-js/faker` factories in `test-data/factories/` (`customerFactory.ts`) + seeding via `utils/apiClient.ts` (Zod contract) & `utils/seedHelper.ts` (hybrid cleanup: `DELETE` for dev/staging, no-op for prod tenant; `factory-only` for DemoQA) + `seededCustomer` fixture in `fixtures/test-fixtures.ts`. Next: migrate `demoqa-practice-form.spec.ts` from hardcoded to `getDemoQACustomer()`.
 - [ ] **Mobile + cross-browser hardening** — `mobile-chrome`/`webkit` in nightly matrix + BrowserStack connector example
-- [ ] **Dark-mode visual baselines** — `prefers-color-scheme` checks + separate snapshots
+- [ ] **Dark-mode visual baselines** — *WIP* — scaffolding in `tests/visual/dark-mode.wip.spec.ts` + `utils/theme.ts` + `visual-dark` project (`colorScheme: 'dark'`, emulates `prefers-color-scheme: dark` + injected invert filter, separate `*-dark.png` baselines; run `npx playwright test --project=visual-dark --update-snapshots` after removing `.skip`)
 
 **Up Next:**
 

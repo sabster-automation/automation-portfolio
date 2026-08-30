@@ -73,6 +73,12 @@ export default defineConfig({
       name: 'visual',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /.*visual.*\.spec\.ts/,
+      testIgnore: /.*dark-mode.*/,
+    },
+    {
+      name: 'visual-dark',
+      use: { ...devices['Desktop Chrome'], colorScheme: 'dark' },
+      testMatch: /.*dark-mode.*\.spec\.ts/,
     },
     {
       name: 'api',
