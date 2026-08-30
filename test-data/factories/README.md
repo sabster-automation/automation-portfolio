@@ -1,6 +1,6 @@
-# Test Data Factories — WIP
+# Test Data Factories
 
-**Status:** Scaffolding only (`test-data/factories/customerFactory.ts`). Not yet wired into specs.
+**Status:** Implemented (`test-data/factories/customerFactory.ts` + `utils/apiClient.ts` + `utils/seedHelper.ts` + `seededCustomer` fixture). Factory-only for DemoQA, API-seeded for SauceDemo/API.
 
 ## Why this exists (vs `test-data/users.ts` hardcoded)
 
@@ -10,49 +10,54 @@
 | Change shape → edit 20 files | Change `Customer` interface once |
 | Prod vs dev constraints differ | Factory accepts `overrides: { state: 'NCR', city: 'Delhi' }` per-env |
 
-## Seeding process — read before implementing
+## Seeding process
 
-We will **not** just generate data in-memory; we will **seed via API** so the AUT has the same data:
+We generate data in-memory **and** seed via API so the AUT has the same data (where applicable):
 
 ```
 [Factory] --createCustomer()--> [Seed via API] --POST /users--> [AUT DB] --then UI test reads same customer-->
 ```
 
-### Steps (detailed in `customerFactory.ts` header):
+### Implemented:
 
-1. **Factory** (`customerFactory.ts`) — pure, no I/O. Already scaffolded.
-2. **API Client** (`utils/apiClient.ts` — TODO) — typed wrapper around `Playwright request` with Zod schemas (next roadmap item). Handles `getEnvConfig().apiBaseURL` per `ENV=dev|staging`.
-3. **Seed Helper** (`utils/seedHelper.ts` — TODO):
+1. **Factory** (`customerFactory.ts`) — pure, no I/O. Uses `faker`.
+2. **API Client** (`utils/apiClient.ts`) — typed wrapper with Zod (`UserSchema`), handles `getEnvConfig().apiBaseURL` per `ENV=dev|staging|prod`.
+3. **Seed Helper** (`utils/seedHelper.ts`):
    ```ts
-   export async function seedCustomerViaAPI(request: APIRequestContext, customer: Customer) {
-     const res = await request.post(`${apiBaseURL}/users`, { data: customer });
-     expect(res.ok()).toBeTruthy();
-     return await res.json(); // { id, ... }
+   export async function seedCustomerViaAPI(request, overrides) {
+     const customer = createCustomer(overrides);
+     const res = await new ApiClient(request).createUser(payload);
+     return { ...customer, id: res.id, seeded: true };
    }
-   export async function cleanupCustomer(request: APIRequestContext, id: string) {
-     await request.delete(`${apiBaseURL}/users/${id}`);
+   export async function cleanupCustomer(request, id) {
+     if (getEnvConfig().name === 'Production') return; // dedicated tenant
+     await new ApiClient(request).deleteUser(id); // best-effort
+   }
+   export function getDemoQACustomer(overrides) { return createCustomer({ state: 'NCR', city: 'Delhi', ...overrides }); }
+   ```
+4. **Fixture** (`fixtures/test-fixtures.ts`):
+   ```ts
+   seededCustomer: async ({ request }, use) => {
+     const customer = await seedCustomerViaAPI(request, {});
+     await use(customer);
+     await cleanupCustomer(request, customer.id);
    }
    ```
-4. **Fixture** (`fixtures/test-fixtures.ts` — TODO):
+5. **Usage:**
    ```ts
-   test.extend<{ customer: Customer }>({
-     customer: async ({ request }, use) => {
-       const c = createCustomer();
-       const seeded = await seedCustomerViaAPI(request, c);
-       await use(seeded);
-       await cleanupCustomer(request, seeded.id);
-     }
-   })
-   ```
-5. **Usage** in spec:
-   ```ts
-   test('demoqa with seeded customer', async ({ page, customer }) => {
-     await form.fillBasicInfo(customer);
+   // DemoQA — factory-only
+   const customer = getDemoQACustomer();
+   await form.fillBasicInfo(customer);
+
+   // SauceDemo/API — seeded
+   test('with seeded', async ({ seededCustomer }) => {
+     await form.fillBasicInfo(seededCustomer);
    });
    ```
 
-### Decisions needed (your call before we code):
-- DemoQA has no real API — should we keep DemoQA as factory-only (UI fill) and only seed for SauceDemo/API AUTs?
-- Cleanup strategy: `afterAll` delete vs ephemeral data vs dedicated test tenant for `prod`?
+### Decisions made:
+- **DemoQA = factory-only** (no API to seed), **SauceDemo/API = factory + API seeding**
+- **Cleanup:** `DELETE` for dev/staging (best-effort), **no-op for prod** (dedicated tenant, nightly purge)
 
-**Next commit:** `utils/apiClient.ts` + `utils/seedHelper.ts` (after your approval).
+### Next:
+- Migrate `demoqa-practice-form.spec.ts` from hardcoded `Sebastian Cichon` to `getDemoQACustomer()`

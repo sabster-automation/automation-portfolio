@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 
 /**
- * WIP — Test Data Factories for seeding via API
+ * Test Data Factories for seeding via API
  * Location: test-data/factories/customerFactory.ts
  * Depends on: @faker-js/faker (added to package.json, run npm ci)
  *
@@ -15,7 +15,7 @@ import { faker } from '@faker-js/faker';
  * │ 4. Per-env: dev/staging/prod can have different constraints                │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
- * PROCESS (to be implemented — STOP, read before coding next step):
+ * PROCESS (implemented — see below):
  *
  * 1. FACTORY (this file) — pure function, no I/O
  *    export function createCustomer(overrides?) => Customer
@@ -38,34 +38,26 @@ import { faker } from '@faker-js/faker';
  *    - staging (reqres): POST /api/users → returns { id, createdAt } (persisted for session)
  *    - prod: never seed — use read-only fixtures or dedicated test tenant
  *
- * 4. USAGE IN TEST (target):
+ * 4. USAGE IN TEST:
+ *    // Factory-only (DemoQA — no API):
  *    import { createCustomer } from '../test-data/factories/customerFactory';
+ *    const customer = createCustomer({ state: 'NCR' });
+ *    await form.fillBasicInfo(customer);
+ *
+ *    // Seeded via API (SauceDemo/API — see utils/seedHelper.ts):
  *    import { seedCustomerViaAPI } from '../utils/seedHelper';
+ *    const { id } = await seedCustomerViaAPI(request, customer);
+ *    // ... fill form with customer.firstName etc.
  *
- *    test('checkout with seeded customer', async ({ page, request }) => {
- *      const customer = createCustomer({ state: 'NCR' }); // WIP: currently hardcoded in DemoQA spec
- *      const { id } = await seedCustomerViaAPI(request, customer); // future
- *      // ... fill form with customer.firstName etc.
- *    });
- *
- * 5. NEXT STEPS (your approval needed before implementing):
- *    - [ ] Decide: seed via API vs. only in-memory factory (DemoQA has no API, so for now factory-only + UI fill)
- *    - [ ] Create utils/apiClient.ts typed wrapper around Playwright request (with Zod validation — roadmap item)
- *    - [ ] Create utils/seedHelper.ts with seedCustomerViaAPI(request, customer)
- *    - [ ] Add fixture: test.extend<{ customer: Customer }>({
- *           customer: async ({ request }, use) => {
- *             const c = createCustomer();
- *             const seeded = await seedCustomerViaAPI(request, c);
- *             await use(seeded);
- *             await cleanupCustomer(request, seeded.id);
- *           }
- *         })
- *    - [ ] Migrate one spec (e.g., demoqa-practice-form.spec.ts) from hardcoded 'Sebastian Cichon' to factory
- *
- * DO NOT yet wire factories into specs — keep specs passing with hardcoded data until seeding is approved.
+ * 5. IMPLEMENTED:
+ *    - [x] Factory (this file) — pure function with faker
+ *    - [x] utils/apiClient.ts — typed wrapper with Zod (UserSchema, CreateUserResponseSchema)
+ *    - [x] utils/seedHelper.ts — seedCustomerViaAPI + cleanupCustomer (hybrid: DELETE for dev/staging, no-op for prod tenant)
+ *    - [x] fixtures/test-fixtures.ts — seededCustomer fixture
+ *    - [ ] Next: migrate demoqa-practice-form.spec.ts from hardcoded 'Sebastian Cichon' to getDemoQACustomer()/createCustomer()
  */
 
-// TODO: remove hardcoded users.ts once factories are approved
+// NOTE: users.ts will be deprecated once all specs migrate to factories
 
 export interface Customer {
   firstName: string;
@@ -88,7 +80,6 @@ export interface CheckoutCustomer extends Customer {
 
 /**
  * Factory: generates a realistic customer for DemoQA / SauceDemo
- * WIP — returns deterministic structure, needs faker install
  */
 export function createCustomer(overrides: Partial<Customer> = {}): Customer {
   // Use faker for realism; fallback to hardcoded if faker not yet installed in CI
@@ -120,6 +111,6 @@ export function createCheckoutCustomer(overrides: Partial<CheckoutCustomer> = {}
   };
 }
 
-// Example usage (keep commented until seeding is approved):
+// Example:
 // const customer = createCustomer({ gender: 'Male', state: 'NCR', city: 'Delhi' });
-// const seeded = await seedCustomerViaAPI(request, customer);
+// const seeded = await seedCustomerViaAPI(request, customer); // for API-seeded suites
