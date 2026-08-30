@@ -136,26 +136,67 @@ Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with 
 
 ---
 
+## 🌱 Test Data and Seeding
+
+Hardcoded `test-data/users.ts` is replaced by factories for isolation, realism and per-env flexibility.
+
+**Factories:** `test-data/factories/customerFactory.ts` (`@faker-js/faker`)
+```ts
+import { createCustomer, getDemoQACustomer } from './test-data/factories/customerFactory';
+const customer = createCustomer({ state: 'NCR', city: 'Delhi' }); // overrides for DemoQA constraints
+const checkout = createCheckoutCustomer({ postalCode: '12345' });
+```
+
+**Seeding:**
+
+- **DemoQA — factory-only** (no API): `getDemoQACustomer()` → `await form.fillBasicInfo(customer)` (UI fill only).
+- **SauceDemo/API — factory + API:** `utils/apiClient.ts` (typed wrapper with `Zod` schemas `UserSchema`/`CreateUserResponseSchema`, per-env `getEnvConfig().apiBaseURL`) + `utils/seedHelper.ts`:
+
+```ts
+// seedHelper.ts
+export async function seedCustomerViaAPI(request, overrides) {
+  const customer = createCustomer(overrides);
+  const created = await new ApiClient(request).createUser(payload); // POST /users or /api/users
+  return { ...customer, id: created.id, seeded: true };
+}
+export async function cleanupCustomer(request, id) {
+  if (getEnvConfig().name === 'Production') return; // dedicated tenant, nightly purge
+  await new ApiClient(request).deleteUser(id); // best-effort DELETE for dev/staging
+}
+```
+
+**Fixture:** `fixtures/test-fixtures.ts` exposes `seededCustomer`:
+```ts
+test('with seeded customer', async ({ seededCustomer }) => {
+  await form.fillBasicInfo(seededCustomer);
+});
+// cleanup runs automatically after test via fixture teardown
+```
+
+**Per-env:** `dev` (`jsonplaceholder` — ephemeral, no real delete), `staging` (`reqres` — `DELETE 204`), `prod` — no-op (dedicated tenant). Next step is migrating `demoqa-practice-form.spec.ts` from hardcoded `Sebastian Cichon` to factories.
+
+---
+
 ## 🗺️ Roadmap — What's Next
 
-> This is a live portfolio — not a finished product. Items below are planned as realistic interview talking points.
+> This is a live and unfinished portfolio. Items below are planned based on skills I have and also ones that I want to acquire. Happy to include these in any interview discussions.
 
 **In Progress / Next (Q4 2026):**
 
 - [x] **Second real AUT** — `demoqa.com` — Practice Form (`tests/e2e/demoqa-practice-form.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — file upload, date picker, react-select, modal → proves AUT-agnostic design vs SauceDemo e-commerce
-- [ ] **Contract & schema validation** — Zod schemas for `jsonplaceholder` / `reqres` responses + snapshot API (shows API quality beyond status codes)
 - [x] **Test data factories** — `@faker-js/faker` factories in `test-data/factories/` (`customerFactory.ts`) + seeding via `utils/apiClient.ts` (Zod contract) & `utils/seedHelper.ts` (hybrid cleanup: `DELETE` for dev/staging, no-op for prod tenant; `factory-only` for DemoQA) + `seededCustomer` fixture in `fixtures/test-fixtures.ts`. Next: migrate `demoqa-practice-form.spec.ts` from hardcoded to `getDemoQACustomer()`.
+- [ ] **Mobile + cross-browser hardening** — `mobile-chrome`/`webkit` in nightly matrix + BrowserStack connector example
+- [ ] **Dark-mode visual baselines** — `prefers-color-scheme` checks + separate snapshots
 
 **Up Next:**
 
+- [ ] **Contract & schema validation** — Zod schemas for `jsonplaceholder` / `reqres` responses + snapshot API (shows API quality beyond status codes)
 - [ ] **Performance budgets** — `responseTime < 800ms` assertions + Lighthouse CI for cart/checkout (perf as quality gate)
-- [ ] **Mobile + cross-browser hardening** — `mobile-chrome`/`webkit` in nightly matrix + BrowserStack connector example
 - [ ] **Security smoke** — negative tests: XSS payload in checkout fields, lockout brute-force, `storageState` isolation proof
 - [ ] **Flaky-test quarantine** — `test.fail()` + `allure` history trend + Slack webhook on nightly failure
 
 **Nice to have / Ideas:**
 
-- [ ] Dark-mode visual baselines + `prefers-color-scheme` checks
 - [ ] Component testing for design system (Storybook + Playwright CT)
 - [ ] Load smoke with `k6` wired to same `ENV` config
 
@@ -163,4 +204,4 @@ Contributions/PRs that implement a roadmap item are welcome — see `tests/` for
 
 ---
 
-Built to be forked and discussed in interviews. Happy testing! 🎭
+Built to showcase some of the skills I have to offer. Can be used as a Portfolio during and Interview Process. Happy testing!
