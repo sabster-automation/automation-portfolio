@@ -141,9 +141,9 @@ Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with 
 
 **In Progress / Next (Q4 2026):**
 
-- [x] **Second real AUT** — `demoqa.com` — *WIP*: Practice Form (`tests/e2e/demoqa-practice-form.wip.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — pagination, file upload, date picker, modal (see WIP test) → proves AUT-agnostic design vs SauceDemo e-commerce
+- [x] **Second real AUT** — `demoqa.com` — Practice Form (`tests/e2e/demoqa-practice-form.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — file upload, date picker, react-select, modal → proves AUT-agnostic design vs SauceDemo e-commerce
 - [ ] **Contract & schema validation** — Zod schemas for `jsonplaceholder` / `reqres` responses + snapshot API (shows API quality beyond status codes)
-- [ ] **Test data factories** — `@faker-js/faker` + `test-data/factories.ts` for checkout/customer, per-env seeding via API (replace hardcoded `users.ts`)
+- [x] **Test data factories** — *WIP* — `@faker-js/faker` scaffolding in `test-data/factories/` (`customerFactory.ts`, `index.ts`) — factory generates `Customer` via `faker`, seeding via API is **not yet wired** (see `test-data/factories/README.md` for the 5-step process: factory → `utils/apiClient.ts` → `seedHelper.ts` → fixture → spec). Awaiting approval before migrating `demoqa-practice-form.spec.ts` from hardcoded data.
 
 **Up Next:**
 

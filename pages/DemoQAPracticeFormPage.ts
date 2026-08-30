@@ -2,12 +2,11 @@ import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
- * WIP Page Object for https://demoqa.com/automation-practice-form
+ * Page Object for https://demoqa.com/automation-practice-form
  * Showcases AUT-agnostic design vs SauceDemo
  * Covers: file upload, date picker, modal, radio, checkbox, react-select
  *
- * Status: WIP — locators refined, flows partially implemented
- * TODO: handle OS file chooser, auto-complete subjects, stable date picker
+ * Completed: locators stable, ad handling via JS removal + route blocking, date via keyboard, state/city via react-select
  */
 export class DemoQAPracticeFormPage extends BasePage {
   readonly firstName: Locator;
@@ -31,11 +30,11 @@ export class DemoQAPracticeFormPage extends BasePage {
     this.firstName = page.locator('#firstName');
     this.lastName = page.locator('#lastName');
     this.email = page.locator('#userEmail');
-    this.genderRadio = (g) => page.locator(`label:has-text("${g}")`);
+    this.genderRadio = (g) => page.getByText(g, { exact: true });
     this.mobile = page.locator('#userNumber');
     this.dateOfBirth = page.locator('#dateOfBirthInput');
     this.subjectsInput = page.locator('#subjectsInput');
-    this.hobbiesCheckbox = (h) => page.locator(`label:has-text("${h}")`);
+    this.hobbiesCheckbox = (h) => page.getByText(h, { exact: true });
     this.uploadPicture = page.locator('#uploadPicture');
     this.currentAddress = page.locator('#currentAddress');
     this.stateSelect = page.locator('#state');
@@ -46,12 +45,22 @@ export class DemoQAPracticeFormPage extends BasePage {
   }
 
   async goto(): Promise<void> {
+    // Block google ads to reduce flakiness
+    await this.page.route('**/*doubleclick.net/**', (route) => route.abort());
+    await this.page.route('**/*googlesyndication.com/**', (route) => route.abort());
+    await this.page.route('**/*adplus.js**', (route) => route.abort());
+
     await this.page.goto('https://demoqa.com/automation-practice-form');
-    // DemoQA has ads/iframes that can obscure form — close if needed
     await this.page.waitForLoadState('domcontentloaded');
-    // Dismiss cookie banner / fixed ads if visible (best-effort)
+
+    // Remove fixed banner, footer and ads that obscure the form
     await this.page.evaluate(() => {
       document.querySelector('#close-fixedban')?.dispatchEvent(new Event('click'));
+      document.getElementById('fixedban')?.remove();
+      document.querySelector('footer')?.remove();
+      document.querySelectorAll('iframe').forEach((el) => el.remove());
+      // Hide ad containers
+      document.querySelectorAll('[id^="ad-"], [class*="ad-"]').forEach((el) => ((el as HTMLElement).style.display = 'none'));
     });
     await expect(this.firstName).toBeVisible();
   }
@@ -65,12 +74,13 @@ export class DemoQAPracticeFormPage extends BasePage {
   }
 
   async setDateOfBirth(date: string) {
-    // WIP: react-datepicker — current implementation is flaky
-    // TODO: picks date via keyboard: Ctrl+A → type → Enter
+    // react-datepicker: select via keyboard to avoid calendar clicks
     await this.dateOfBirth.click();
     await this.page.keyboard.press('Control+A');
     await this.page.keyboard.type(date);
     await this.page.keyboard.press('Enter');
+    // Verify value was set
+    await expect(this.dateOfBirth).toHaveValue(new RegExp(date.split(' ')[2])); // year
   }
 
   async addSubject(subject: string) {
@@ -79,18 +89,36 @@ export class DemoQAPracticeFormPage extends BasePage {
   }
 
   async uploadFile(filePath: string) {
-    // Requires real file on disk; in CI use a generated txt
     await this.uploadPicture.setInputFiles(filePath);
+    // Verify file was attached
+    await expect(this.uploadPicture).toHaveValue(new RegExp(filePath.split(/[\\/]/).pop()!.split('.')[0]));
   }
 
   async submit(): Promise<void> {
-    // Form footer can be covered by ad — scroll + force click
+    // Re-hide ads that may have reappeared and ensure button is clickable
+    await this.page.evaluate(() => {
+      document.getElementById('fixedban')?.remove();
+      document.querySelector('footer')?.remove();
+    });
     await this.submitButton.scrollIntoViewIfNeeded();
     await this.submitButton.click({ force: true });
   }
 
+  async selectState(state: string) {
+    await this.stateSelect.click();
+    await this.page.locator('div[id^="react-select-3-option"]').filter({ hasText: state }).click();
+    await expect(this.stateSelect).toContainText(state);
+  }
+
+  async selectCity(city: string) {
+    await this.citySelect.click();
+    await this.page.locator('div[id^="react-select-4-option"]').filter({ hasText: city }).click();
+    await expect(this.citySelect).toContainText(city);
+  }
+
   async assertSuccessModalVisible() {
     await expect(this.modalTitle).toHaveText(/Thanks for submitting the form/i);
+    await expect(this.page.locator('.modal-content')).toBeVisible();
   }
 
   async closeModal() {
