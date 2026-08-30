@@ -23,6 +23,7 @@
 | **Auth Optimization** | `storageState` via `tests/setup/auth.setup.ts` — 10x faster suite |
 | **Multi-Environment** | `ENV=dev\|staging\|prod` via `config/environments.ts` + CI matrix |
 | **API Testing** | Playwright `request` — GET/POST, schema, chaining |
+| **Test Data** | `@faker-js/faker` factories (`test-data/factories/`) + seeding via `utils/seedHelper.ts` (factory-only for DemoQA, API-seeded for SauceDemo) |
 | **Reporting** | HTML + JUnit + **Allure** (`allure-playwright`) → GitHub Pages |
 | **CI/CD** | GitHub Actions matrix (env × browser) + Allure Pages |
 
@@ -143,7 +144,7 @@ Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with 
 
 - [x] **Second real AUT** — `demoqa.com` — Practice Form (`tests/e2e/demoqa-practice-form.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — file upload, date picker, react-select, modal → proves AUT-agnostic design vs SauceDemo e-commerce
 - [ ] **Contract & schema validation** — Zod schemas for `jsonplaceholder` / `reqres` responses + snapshot API (shows API quality beyond status codes)
-- [x] **Test data factories** — *WIP* — `@faker-js/faker` scaffolding in `test-data/factories/` (`customerFactory.ts`, `index.ts`) — factory generates `Customer` via `faker`, seeding via API is **not yet wired** (see `test-data/factories/README.md` for the 5-step process: factory → `utils/apiClient.ts` → `seedHelper.ts` → fixture → spec). Awaiting approval before migrating `demoqa-practice-form.spec.ts` from hardcoded data.
+- [x] **Test data factories** — `@faker-js/faker` factories in `test-data/factories/` (`customerFactory.ts`) + seeding via `utils/apiClient.ts` (Zod contract) & `utils/seedHelper.ts` (hybrid cleanup: `DELETE` for dev/staging, no-op for prod tenant; `factory-only` for DemoQA) + `seededCustomer` fixture in `fixtures/test-fixtures.ts`. Next: migrate `demoqa-practice-form.spec.ts` from hardcoded to `getDemoQACustomer()`.
 
 **Up Next:**
 

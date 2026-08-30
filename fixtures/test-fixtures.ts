@@ -15,7 +15,11 @@ type AuthFixtures = {
   authenticatedPage: void;
 };
 
-export const test = base.extend<Pages & AuthFixtures>({
+type SeededFixtures = {
+  seededCustomer: import('../test-data/factories/customerFactory').Customer & { id: string | number; seeded: boolean };
+};
+
+export const test = base.extend<Pages & AuthFixtures & SeededFixtures>({
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page));
   },
@@ -34,6 +38,13 @@ export const test = base.extend<Pages & AuthFixtures>({
     await loginPage.loginWithEnvDefaults();
     await loginPage.assertLoggedIn();
     await use();
+  },
+  seededCustomer: async ({ request }, use) => {
+    // Seeded via API — used for SauceDemo/API suites; DemoQA uses factory-only (getDemoQACustomer)
+    const { seedCustomerViaAPI, cleanupCustomer } = await import('../utils/seedHelper');
+    const customer = await seedCustomerViaAPI(request, {});
+    await use(customer);
+    await cleanupCustomer(request, customer.id);
   },
 });
 
