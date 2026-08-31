@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [dev, staging]
+        env: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', github.event.inputs.env)) || fromJSON('["dev","staging"]') }}
         project: [chromium, firefox]
     steps:
       - uses: actions/checkout@v4
@@ -66,19 +66,37 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
+      - name: Check visual baselines
+        id: baselines
+        run: |
+          if find tests/visual -type d -name '*-snapshots' 2>/dev/null | grep -q .; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No visual baselines under tests/visual. Run Actions → Update Visual Baselines on main, then re-run this job."
+          fi
       - uses: actions/setup-node@v4
+        if: steps.baselines.outputs.present == 'true'
         with:
           node-version: 20
           cache: 'npm'
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - if: steps.baselines.outputs.present == 'true'
+        run: npm ci
+      - if: steps.baselines.outputs.present == 'true'
+        run: npx playwright install --with-deps chromium
       - name: Run Visual Regression
-        run: ENV=dev npx playwright test --project=visual
+        if: steps.baselines.outputs.present == 'true'
+        run: npx playwright test --project=visual
+        env:
+          ENV: dev
+          CI: true
       - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.baselines.outputs.present == 'true' }}
         with:
           name: visual-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
 
   api:
     timeout-minutes: 10

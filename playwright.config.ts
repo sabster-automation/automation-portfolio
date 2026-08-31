@@ -2,11 +2,22 @@ import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import { getBaseURL } from './config/environments';
 
-const env = process.env.ENV || 'dev';
-dotenv.config({ path: `.env.${env}` });
+// Load `.env` first so ENV=staging in that file selects `.env.staging`.
 dotenv.config({ path: '.env' });
+const env = process.env.ENV || 'dev';
+dotenv.config({ path: `.env.${env}`, override: true });
 
 const baseURL = getBaseURL();
+
+const skipInBrowserE2E = [
+  /.*visual.*\.spec\.ts/,
+  /.*api.*\.spec\.ts/,
+  /.*a11y.*\.spec\.ts/,
+  /.*\.setup\.ts/,
+];
+
+// DemoQA is a second AUT; keep it on chromium only to avoid 4-browser flake.
+const skipOutsideChromium = [...skipInBrowserE2E, /demoqa/i];
 
 export default defineConfig({
   testDir: './tests',
@@ -37,7 +48,8 @@ export default defineConfig({
     navigationTimeout: 30_000,
   },
   projects: [
-    // Setup project - runs first and creates storageState
+    // Writes playwright/.auth/user.json. SauceDemo keeps the session in
+    // sessionStorage, so e2e projects log in themselves and do not consume this file.
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
@@ -45,29 +57,22 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      dependencies: ['setup'],
-      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
-    },
-    {
-      name: 'chromium-auth',
-      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/user.json' },
-      dependencies: ['setup'],
-      testMatch: /.*(inventory|checkout).*\.spec\.ts/,
+      testIgnore: skipInBrowserE2E,
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
+      testIgnore: skipOutsideChromium,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
+      testIgnore: skipOutsideChromium,
     },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
-      testIgnore: [/.*visual.*\.spec\.ts/, /.*api.*\.spec\.ts/, /.*a11y.*\.spec\.ts/, /.*\.setup\.ts/],
+      testIgnore: skipOutsideChromium,
     },
     {
       name: 'visual',

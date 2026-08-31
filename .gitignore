@@ -14,10 +14,10 @@ blob-report/
 test-results.xml
 junit.xml
 
-# Env files - keep example, ignore real
+# Env files - keep example, ignore real (including .env.dev / .env.staging / .env.prod)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # OS
 .DS_Store

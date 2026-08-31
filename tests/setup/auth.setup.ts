@@ -4,9 +4,11 @@ import { LoginPage } from '../../pages/LoginPage';
 const authFile = 'playwright/.auth/user.json';
 
 /**
- * Auth setup - runs once before all tests that need authentication
- * Demonstrates senior pattern: storageState reuse to avoid 20x logins
- * Showcase: 10x faster suite, stable sessions, proper teardown
+ * Auth setup — writes playwright/.auth/user.json.
+ * SauceDemo stores the session in sessionStorage, which storageState does not
+ * restore, so e2e specs still log in themselves. This project is a smoke that
+ * login works and that the state file can be written; it is not a suite-wide
+ * session cache.
  */
 setup('authenticate', async ({ page }) => {
   const loginPage = new LoginPage(page);
