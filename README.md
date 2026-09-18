@@ -16,15 +16,16 @@
 
 | Skill | Demonstrated By |
 |-------|----------------|
-| **Playwright + TypeScript** | Strict TS, POM, fixtures, `data-test` locators |
-| **Real E2E Scenarios** | Full checkout on [SauceDemo](https://www.saucedemo.com) |
+| **Playwright + TypeScript** | Strict TS, POM, fixtures, `data-test` locators — fully commented for colleagues/hiring managers (`pages/`, `config/`, `utils/`, `test-data/`, `tests/`) |
+| **Real E2E Scenarios** | Full checkout on [SauceDemo](https://www.saucedemo.com) + Practice Form on [DemoQA](https://demoqa.com/automation-practice-form) (file upload, date picker, react-select) |
 | **Visual Regression** | `toHaveScreenshot()` with thresholds, masking, mobile |
 | **Accessibility (a11y)** | `@axe-core/playwright` WCAG 2.1, `tests/a11y/a11y.spec.ts` |
-| **Auth Optimization** | `storageState` via `tests/setup/auth.setup.ts` — 10x faster suite |
+| **Auth Pattern** | `tests/setup/auth.setup.ts` writes `playwright/.auth/user.json` — e2e log in via fixtures because SauceDemo uses `sessionStorage` (documents `storageState` limits) |
 | **Multi-Environment** | `ENV=dev\|staging\|prod` via `config/environments.ts` + CI matrix |
-| **API Testing** | Playwright `request` — GET/POST, schema, chaining |
-| **Test Data** | `@faker-js/faker` factories (`test-data/factories/`) + seeding via `utils/seedHelper.ts` (factory-only for DemoQA, API-seeded for SauceDemo) |
+| **API Testing** | Playwright `request` — GET/POST, Zod schema, chaining |
+| **Test Data** | `@faker-js/faker` factories (`test-data/factories/customerFactory.ts`) + seeding `utils/seedHelper.ts`/`utils/apiClient.ts`; legacy `test-data/users.ts` retained for migration reference |
 | **Reporting** | HTML + JUnit + **Allure** (`allure-playwright`) → GitHub Pages |
+| **Guides & MCP** | Step-by-step rebuild guide `docs/GUIDE-Step-By-Step.html` + Playwright MCP for Opencode/VS Code (`opencode.json`, `.vscode/mcp.json`) |
 | **CI/CD** | GitHub Actions matrix (env × browser) + Allure Pages |
 
 ## 🚀 Quick Start
@@ -89,14 +90,14 @@ npx playwright test tests/a11y --reporter=html
 
 Checks via `AxeBuilder`: `wcag2a`, `wcag2aa`, critical/serious gate, attachments in HTML report. Also manual checks: `alt` text, heading hierarchy.
 
-## 🔐 Auth Reuse (storageState)
+## 🔐 Auth Pattern (storageState — with caveat)
 
 ```bash
-npx playwright test --project=setup   # creates playwright/.auth/user.json
-npx playwright test --project=chromium # reuses session (no login)
+npx playwright test --project=setup   # creates playwright/.auth/user.json (smoke)
+npx playwright test --project=chromium # still logs in via fixtures (sessionStorage)
 ```
 
-Setup project `tests/setup/auth.setup.ts` logs in once → `dependencies: ['setup']` in `playwright.config.ts`. Shows senior optimization: avoids 20x logins.
+`tests/setup/auth.setup.ts` writes `playwright/.auth/user.json` as a pattern demo. SauceDemo stores its session in `sessionStorage`, which `storageState` does not restore, so e2e specs log in themselves via `fixtures/test-fixtures.ts:35-41` (`loginPage.loginWithEnvDefaults()`). Don't add `dependencies: ['setup']` to e2e projects for this AUT — wire `storageState` only when forking to a cookie/localStorage app. See `AGENTS.md` and inline comments in `tests/setup/auth.setup.ts`.
 
 ## 📊 Allure Report
 
@@ -134,11 +135,16 @@ Workflow: `.github/workflows/release.yml` runs `chromium` + `api` + `a11y` with 
 
 > The latest release is linkable in your CV: `https://github.com/sabster-automation/automation-portfolio/releases/latest` → shows stakeholders the actual HTML report.
 
+## 📖 Guides & MCP
+
+- **Rebuild & reference guide:** `docs/GUIDE-Step-By-Step.html` — offline, self-contained HTML with TOC: architecture diagram, 14-step rebuild from empty folder, and front-end/back-end reference for every `pages/`, `config/`, `utils/`, `test-data/`, `tests/` module.
+- **Playwright MCP:** `opencode.json` (Opencode) and `.vscode/mcp.json` (VS Code) both expose `npx @playwright/mcp@latest` — enable browser automation via MCP. Global Opencode config is `~/.config/opencode/opencode.jsonc`.
+
 ---
 
 ## 🌱 Test Data and Seeding
 
-Hardcoded `test-data/users.ts` is replaced by factories for isolation, realism and per-env flexibility.
+Legacy `test-data/users.ts` coexists with factories — factories are the forward path for isolation, realism and per-env flexibility (`test-data/factories/README.md` removed 2026-09; see `customerFactory.ts` header). `utils/helpers.ts` was removed as unused.
 
 **Factories:** `test-data/factories/customerFactory.ts` (`@faker-js/faker`)
 ```ts
@@ -173,7 +179,7 @@ test('with seeded customer', async ({ seededCustomer }) => {
 // cleanup runs automatically after test via fixture teardown
 ```
 
-**Per-env:** `dev` (`jsonplaceholder` — ephemeral, no real delete), `staging` (`reqres` — `DELETE 204`), `prod` — no-op (dedicated tenant). Next step is migrating `demoqa-practice-form.spec.ts` from hardcoded `Sebastian Cichon` to factories.
+**Per-env:** `dev` (`jsonplaceholder` — ephemeral, no real delete), `staging` (`reqres` — `DELETE 204`), `prod` — no-op (dedicated tenant). `demoqa-practice-form.spec.ts` still uses hardcoded `Sebastian Cichon` — next step is migrating to `getDemoQACustomer()`.
 
 ---
 
@@ -184,7 +190,9 @@ test('with seeded customer', async ({ seededCustomer }) => {
 **In Progress / Next (Q4 2026):**
 
 - [x] **Second real AUT** — `demoqa.com` — Practice Form (`tests/e2e/demoqa-practice-form.spec.ts` + `pages/DemoQAPracticeFormPage.ts`) — file upload, date picker, react-select, modal → proves AUT-agnostic design vs SauceDemo e-commerce
-- [x] **Test data factories** — `@faker-js/faker` factories in `test-data/factories/` (`customerFactory.ts`) + seeding via `utils/apiClient.ts` (Zod contract) & `utils/seedHelper.ts` (hybrid cleanup: `DELETE` for dev/staging, no-op for prod tenant; `factory-only` for DemoQA) + `seededCustomer` fixture in `fixtures/test-fixtures.ts`. Next: migrate `demoqa-practice-form.spec.ts` from hardcoded to `getDemoQACustomer()`.
+- [x] **Test data factories** — `@faker-js/faker` factories in `test-data/factories/` (`customerFactory.ts`) + seeding via `utils/apiClient.ts` (Zod contract) & `utils/seedHelper.ts` (hybrid cleanup: `DELETE` for dev/staging, no-op for prod tenant; `factory-only` for DemoQA) + `seededCustomer` fixture in `fixtures/test-fixtures.ts`. Next: migrate `demoqa-practice-form.spec.ts` from hardcoded to `getDemoQACustomer()` — now commented for hiring-manager walkthrough.
+- [x] **Code documentation for hiring managers** — 2026-09: added contextual comments across `pages/`, `config/environments.ts`, `utils/`, `test-data/`, `tests/` explaining portfolio rationale and stability techniques
+- [x] **Guides & MCP** — `docs/GUIDE-Step-By-Step.html` + `opencode.json`/`.vscode/mcp.json` Playwright MCP for Opencode/VS Code
 - [ ] **Mobile + cross-browser hardening** — `mobile-chrome`/`webkit` in nightly matrix + BrowserStack connector example
 - [ ] **Dark-mode visual baselines** — *WIP* — scaffolding in `tests/visual/dark-mode.wip.spec.ts` + `utils/theme.ts` + `visual-dark` project (`colorScheme: 'dark'`, emulates `prefers-color-scheme: dark` + injected invert filter, separate `*-dark.png` baselines; run `npx playwright test --project=visual-dark --update-snapshots` after removing `.skip`)
 
