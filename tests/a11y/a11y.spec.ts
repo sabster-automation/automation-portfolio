@@ -2,16 +2,30 @@ import { test, expect } from '../../fixtures/test-fixtures';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
- * Accessibility Suite @a11y
- * Showcase: WCAG 2.1 automated checks with axe-core
- * This is a strong portfolio differentiator - most E2E suites skip a11y
+ * Accessibility suite — axe-core WCAG 2.1 audits.
  *
- * Run: npx playwright test --project=a11y
- * Tags: @a11y can be run separately in CI
+ * Portfolio differentiator (for hiring managers):
+ *   Most E2E portfolios skip accessibility. This suite runs `@axe-core/playwright`
+ *   on every core SauceDemo page, filters to `critical`/`serious` only (so the
+ *   suite signals real barriers, not minor colour tweaks), and attaches the full
+ *   axe report as HTML-report artefacts for traceability.
+ *   It also shows manual a11y checks (heading hierarchy, image `alt`) that
+ *   complement automated scans.
+ *
+ * Project: `a11y` (playwright.config.ts:94-97) — chromium only, `testMatch: /.*a11y.*\.spec\.ts/`.
+ * Run: `npx playwright test --project=a11y` or `npx playwright test tests/a11y --reporter=html`
+ *
+ * For colleagues:
+ *   - SauceDemo has known violations (`select-name`, cart badge contrast) — the
+ *     suite handles them via `.disableRules()` / `.exclude()` and documents why,
+ *     rather than letting the suite be perpetually red.
+ *   - Use `test.info().attach('a11y-report-*', { body: JSON.stringify(results) })`
+ *     so the report is visible in `playwright-report/index.html`.
  */
 
 test.describe('Accessibility @a11y', () => {
   test('login page should not have critical a11y violations', async ({ page, loginPage }) => {
+    // Login as entry point — broadest tag set (wcag2a/aa + wcag21a/aa) for a thorough scan.
     await loginPage.goto();
 
     const results = await new AxeBuilder({ page })
@@ -30,6 +44,7 @@ test.describe('Accessibility @a11y', () => {
   });
 
   test('inventory page should not have critical a11y violations', async ({ page, loginPage }) => {
+    // Inventory after login — excludes dynamic badge and disables known select-name debt.
     await loginPage.goto();
     await loginPage.loginWithEnvDefaults();
     await loginPage.assertLoggedIn();
@@ -50,6 +65,7 @@ test.describe('Accessibility @a11y', () => {
   });
 
   test('cart page should not have critical a11y violations', async ({ page, loginPage, inventoryPage }) => {
+    // Cart with items — seeds a realistic route (add → cart) before scanning.
     await loginPage.goto();
     await loginPage.loginWithEnvDefaults();
     // Use realistic flow - add items then check cart
@@ -74,6 +90,7 @@ test.describe('Accessibility @a11y', () => {
     inventoryPage,
     cartPage,
   }) => {
+    // Checkout Step One — scoped scan to the form inputs plus a visibility guard.
     await loginPage.goto();
     await loginPage.loginWithEnvDefaults();
     await inventoryPage.addToCart('Sauce Labs Backpack');
@@ -100,6 +117,7 @@ test.describe('Accessibility @a11y', () => {
   });
 
   test('should verify page has correct heading hierarchy', async ({ page, loginPage }) => {
+    // Manual a11y complement to axe — heading presence and image alt text.
     await loginPage.goto();
     await loginPage.loginWithEnvDefaults();
 
@@ -110,7 +128,7 @@ test.describe('Accessibility @a11y', () => {
     const title = await page.locator('.title').textContent();
     expect(title).toBeTruthy();
 
-    // Check all images have alt text
+    // Check all images have alt text — common WCAG failure.
     const images = page.locator('img');
     const count = await images.count();
     for (let i = 0; i < count; i++) {

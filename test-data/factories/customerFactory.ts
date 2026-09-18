@@ -1,88 +1,69 @@
 import { faker } from '@faker-js/faker';
 
 /**
- * Test Data Factories for seeding via API
+ * Customer factories — realistic, isolated test data via @faker-js/faker.
  * Location: test-data/factories/customerFactory.ts
- * Depends on: @faker-js/faker (added to package.json, run npm ci)
  *
- * GOAL: Replace hardcoded test-data/users.ts with per-env, isolated, realistic data.
+ * Why factories matter (portfolio narrative for hiring managers):
+ *   Hardcoded data (`test-data/users.ts`) causes collisions in parallel runs
+ *   ("John Doe" twice) and ties every env to the same shape. Factories solve
+ *   four problems:
+ *     1. Isolation: faker + uniqueness → no cross-test interference in `fullyParallel` runs.
+ *     2. Realism: valid emails/phones/addresses vs "test@test.com".
+ *     3. Maintainability: change Customer interface once, not in 20 spec files.
+ *     4. Per-env flexibility: overrides like `{ state:'NCR', city:'Delhi' }` satisfy DemoQA constraints.
  *
- * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ WHY FACTORIES + SEEDING?                                                  │
- * │ 1. Isolation: each test gets unique data → no collisions in parallel runs │
- * │ 2. Realism: faker generates valid emails, phones, addresses vs "John Doe"  │
- * │ 3. Maintainability: one place to change shape, not 20 spec files           │
- * │ 4. Per-env: dev/staging/prod can have different constraints                │
- * └─────────────────────────────────────────────────────────────────────────────┘
+ * Architecture:
+ *   1. Factory (this file) — pure function, no I/O, deterministic with faker seed if needed.
+ *      `createCustomer(overrides?) => Customer` — merges faker defaults with overrides for edge cases.
+ *   2. Seeding (utils/seedHelper.ts + utils/apiClient.ts) — POSTs factory data to per-env API
+ *      (`jsonplaceholder` / `reqres` via `getEnvConfig().apiBaseURL`) then returns `{...customer, id}`.
+ *      Called via `seededCustomer` fixture so UI tests can fill forms with the same data.
+ *   3. Fixture (fixtures/test-fixtures.ts) — `seededCustomer` handles create before `use()` and
+ *      `cleanupCustomer` after, even on failure. Prod cleanup is no-op (dedicated tenant).
  *
- * PROCESS (implemented — see below):
+ * Usage:
+ *   // Factory-only (DemoQA — no API):
+ *   import { createCustomer, getDemoQACustomer } from '@data/factories/customerFactory';
+ *   const customer = getDemoQACustomer(); // forces valid NCR/Delhi pair
+ *   await form.fillBasicInfo(customer);
  *
- * 1. FACTORY (this file) — pure function, no I/O
- *    export function createCustomer(overrides?) => Customer
- *    Uses faker.person, faker.internet.email, faker.phone.number
- *    Accepts overrides for edge cases: createCustomer({ email: 'invalid' })
+ *   // Seeded via API (SauceDemo/API):
+ *   test('with seeded', async ({ seededCustomer }) => { await form.fillBasicInfo(seededCustomer); });
  *
- * 2. SEEDING VIA API (next file: apiClient.ts / seedHelper.ts)
- *    - In playwright.config.ts we already have getEnvConfig() + apiBaseURL
- *    - Example: POST ${apiBaseURL}/users (jsonplaceholder) or /api/users (reqres)
- *    - Should be called in:
- *        a) test.beforeAll() for suite-level seed, OR
- *        b) custom fixture: test.extend({ seededCustomer: async ({request}, use) => {...}})
- *    - Must handle:
- *        • Auth: if API needs token, fetch via request.newContext() with login
- *        • Idempotency: generate unique email via faker + Date.now()
- *        • Cleanup: afterAll() DELETE ${apiBaseURL}/users/{id} or use ephemeral data
- *
- * 3. PER-ENV EXAMPLE:
- *    - dev (jsonplaceholder): POST /users → returns { id: 11 } (fake, not persisted)
- *    - staging (reqres): POST /api/users → returns { id, createdAt } (persisted for session)
- *    - prod: never seed — use read-only fixtures or dedicated test tenant
- *
- * 4. USAGE IN TEST:
- *    // Factory-only (DemoQA — no API):
- *    import { createCustomer } from '../test-data/factories/customerFactory';
- *    const customer = createCustomer({ state: 'NCR' });
- *    await form.fillBasicInfo(customer);
- *
- *    // Seeded via API (SauceDemo/API — see utils/seedHelper.ts):
- *    import { seedCustomerViaAPI } from '../utils/seedHelper';
- *    const { id } = await seedCustomerViaAPI(request, customer);
- *    // ... fill form with customer.firstName etc.
- *
- * 5. IMPLEMENTED:
- *    - [x] Factory (this file) — pure function with faker
- *    - [x] utils/apiClient.ts — typed wrapper with Zod (UserSchema, CreateUserResponseSchema)
- *    - [x] utils/seedHelper.ts — seedCustomerViaAPI + cleanupCustomer (hybrid: DELETE for dev/staging, no-op for prod tenant)
- *    - [x] fixtures/test-fixtures.ts — seededCustomer fixture
- *    - [ ] Next: migrate demoqa-practice-form.spec.ts from hardcoded 'Sebastian Cichon' to getDemoQACustomer()/createCustomer()
+ * For colleagues: add fields to `Customer` here first, then update seedHelper payload mapping.
+ * Keep `dateOfBirth` static ("10 Jan 1990") — random dates flake on react-datepicker keyboard flow.
  */
 
 // NOTE: users.ts will be deprecated once all specs migrate to factories
 
+/** Core customer shape — shared by SauceDemo checkout and DemoQA practice form. */
 export interface Customer {
   firstName: string;
   lastName: string;
   email: string;
   gender: 'Male' | 'Female' | 'Other';
   mobile: string;
-  dateOfBirth: string; // "10 Jan 1990"
-  subject: string;
+  dateOfBirth: string; // "10 Jan 1990" — keep static; date picker is flaky with random dates
+  subject: string; // DemoQA: Maths / Computer Science / Physics (autocomplete)
   hobby: 'Sports' | 'Reading' | 'Music';
   address: string;
-  state: string;
-  city: string;
+  state: string; // DemoQA valid: NCR / Uttar Pradesh / Haryana / Rajasthan
+  city: string; // must match state (e.g., NCR → Delhi)
   picturePath?: string;
 }
 
+/** Checkout variant adds postalCode for SauceDemo Step One. */
 export interface CheckoutCustomer extends Customer {
   postalCode: string;
 }
 
 /**
- * Factory: generates a realistic customer for DemoQA / SauceDemo
+ * Generate a realistic customer. Overrides win over faker defaults — e.g.,
+ * `createCustomer({ email:'invalid' })` for negative validation tests.
  */
 export function createCustomer(overrides: Partial<Customer> = {}): Customer {
-  // Use faker for realism; fallback to hardcoded if faker not yet installed in CI
+  // Faker provides realism; keep firstName/lastName linked to email for consistency.
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
 
@@ -91,17 +72,18 @@ export function createCustomer(overrides: Partial<Customer> = {}): Customer {
     lastName,
     email: faker.internet.email({ firstName, lastName }).toLowerCase(),
     gender: faker.helpers.arrayElement(['Male', 'Female', 'Other'] as const),
-    mobile: faker.string.numeric(10), // 10 digits for DemoQA
-    dateOfBirth: '10 Jan 1990', // keep static for now — date picker is flaky with random dates
+    mobile: faker.string.numeric(10), // 10 digits — DemoQA validates length
+    dateOfBirth: '10 Jan 1990', // static for now — date picker is flaky with random dates
     subject: faker.helpers.arrayElement(['Maths', 'Computer Science', 'Physics']),
     hobby: faker.helpers.arrayElement(['Sports', 'Reading', 'Music'] as const),
     address: faker.location.streetAddress(),
     state: 'NCR', // DemoQA valid: NCR/Uttar Pradesh/Haryana/Rajasthan
-    city: 'Delhi', // must match state
+    city: 'Delhi', // must match state — default NCR → Delhi
     ...overrides,
   };
 }
 
+/** Convenience for checkout tests — adds realistic 5-digit ZIP. */
 export function createCheckoutCustomer(overrides: Partial<CheckoutCustomer> = {}): CheckoutCustomer {
   const base = createCustomer(overrides);
   return {

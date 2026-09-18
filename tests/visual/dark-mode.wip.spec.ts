@@ -6,10 +6,18 @@ import { enableDarkMode, assertDarkModeActive } from '../../utils/theme';
  * Location: tests/visual/dark-mode.wip.spec.ts
  * Project: visual-dark (playwright.config.ts → use: { colorScheme: 'dark' })
  *
- * Why WIP: SauceDemo/DemoQA have no native dark theme — we emulate
- * `prefers-color-scheme: dark` via page.emulateMedia and an injected
- * CSS invert filter (see utils/theme.ts). Baselines need separate
- * `*-dark.png` snapshots: login-dark, inventory-dark, etc.
+ * Context (for hiring managers / colleagues):
+ *   SauceDemo/DemoQA have no native dark theme. Rather than leaving a gap in
+ *   visual coverage, this scaffolding demonstrates the *technique* for
+ *   dark-mode testing: emulate `prefers-color-scheme: dark` via
+ *   `page.emulateMedia` and inject a lightweight CSS `invert(0.92) hue-rotate`
+ *   filter in `utils/theme.ts`. The baselines use relaxed thresholds
+ *   (0.3–0.35, 150–250 px) because inversion is intentionally coarse — a real
+ *   product with a native theme would use tighter values.
+ *
+ *   The suite is intentionally SKIPPED until baselines are committed. This
+ *   signals work-in-progress honestly (a portfolio best practice) while keeping
+ *   the main CI green.
  *
  * Status:
  *  - [x] Scaffolding: helper + project + skipped suite
@@ -17,8 +25,10 @@ import { enableDarkMode, assertDarkModeActive } from '../../utils/theme';
  *  - [ ] Stabilize diff thresholds per page (login vs inventory need different maxDiffPixels)
  *  - [ ] Add to CI (visual job) after baselines are committed
  *
- * This suite is intentionally SKIPPED until baselines exist.
- * Remove `.skip` and rename to `dark-mode.spec.ts` when ready.
+ * Activation:
+ *   Remove `.skip` from `test.describe.skip`, rename to `dark-mode.spec.ts`,
+ *   then run `npx playwright test --project=visual-dark --update-snapshots`
+ *   on a Linux runner and commit the `*-dark.png` snapshots.
  */
 
 test.describe.skip('Dark-mode visual baselines — WIP @visual @dark', () => {
@@ -28,14 +38,16 @@ test.describe.skip('Dark-mode visual baselines — WIP @visual @dark', () => {
   });
 
   test('login page — dark @visual-dark', async ({ page, loginPage }) => {
+    // Dark baseline: login via helper then screenshot with relaxed threshold.
     await loginPage.goto();
-    await enableDarkMode(page);
-    await assertDarkModeActive(page);
+    await enableDarkMode(page); // emulate + inject invert filter + 200ms repaint
+    await assertDarkModeActive(page); // guards that emulation landed
     // WIP: baseline not yet committed — run with --update-snapshots to create login-dark.png
     await expect(page).toHaveScreenshot('login-dark.png', { maxDiffPixels: 150, threshold: 0.3 });
   });
 
   test('inventory page — dark @visual-dark', async ({ page, loginPage }) => {
+    // Inventory dark — covers grid + sort + cart affordances.
     await loginPage.goto();
     await loginPage.loginWithEnvDefaults();
     await enableDarkMode(page);
@@ -43,6 +55,7 @@ test.describe.skip('Dark-mode visual baselines — WIP @visual @dark', () => {
   });
 
   test('demoqa practice form — dark @visual-dark', async ({ page }) => {
+    // DemoQA dark — heavier threshold + mask for fixed banners that survive inversion.
     await page.goto('https://demoqa.com/automation-practice-form');
     await page.emulateMedia({ colorScheme: 'dark' });
     await enableDarkMode(page);

@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automation Portfolio — Complete Build & Reference Guide</title>
+<meta name="description" content="Full rebuild manual and reference for the Playwright + TypeScript Automation Portfolio (SauceDemo + DemoQA, API, Visual, a11y, Allure, Multi-Env CI).">
+<style>
+  :root{
+    --bg:#f8fafc; --surface:#ffffff; --surface-2:#f1f5f9; --border:#e2e8f0;
+    --text:#0f172a; --muted:#475569; --faint:#94a3b8;
+    --accent:#0ea5e9; --accent-2:#0284c7; --accent-soft:#e0f2fe;
+    --green:#059669; --amber:#d97706; --violet:#7c3aed; --rose:#e11d48;
+    --code-bg:#0f172a; --code-fg:#e2e8f0;
+    --radius:14px; --radius-sm:8px; --shadow:0 4px 24px rgba(15,23,42,.07);
+    --sidebar-w:310px; --header-h:64px;
+    --max:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:84px}
+  body{margin:0; font-family:ui-sans-system,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.65}
+  a{color:var(--accent-2); text-decoration:none} a:hover{text-decoration:underline}
+  code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  /* Header */
+  .topbar{position:sticky; top:0; z-index:40; background:rgba(255,255,255,.82); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); height:var(--header-h); display:flex; align-items:center}
+  .topbar-inner{max-width:var(--max); width:100%; margin:0 auto; padding:0 20px; display:flex; align-items:center; gap:16px; justify-content:space-between}
+  .brand{display:flex; align-items:center; gap:12px}
+  .brand-badge{width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#0ea5e9,#7c3aed); display:grid; place-items:center; color:white; font-weight:800; font-size:18px}
+  .brand h1{margin:0; font-size:17px; line-height:1.1; letter-spacing:-.02em}
+  .brand p{margin:2px 0 0; font-size:12px; color:var(--muted)}
+  .top-actions{display:flex; gap:8px; align-items:center}
+  .btn{appearance:none; border:1px solid var(--border); background:var(--surface); padding:8px 12px; border-radius:999px; font-size:13px; cursor:pointer; color:var(--text); display:inline-flex; gap:6px; align-items:center}
+  .btn-primary{background:var(--text); color:white; border-color:var(--text)}
+  .btn:hover{filter:brightness(1.05)}
+  .ver{font-size:11px; color:var(--faint); border:1px solid var(--border); padding:3px 8px; border-radius:999px; background:var(--surface)}
+  /* Layout */
+  .layout{max-width:var(--max); margin:0 auto; display:grid; grid-template-columns:var(--sidebar-w) 1fr; gap:28px; padding:22px 20px 60px}
+  @media(max-width:980px){ .layout{grid-template-columns:1fr} .sidebar{position:static !important; max-height:none !important} }
+  .sidebar{position:sticky; top:calc(var(--header-h) + 16px); align-self:start; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; max-height:calc(100vh - 96px); display:flex; flex-direction:column}
+  .sidebar-head{padding:14px 16px 10px; border-bottom:1px solid var(--border); background:var(--surface-2)}
+  .sidebar-head input{width:100%; padding:9px 10px 9px 30px; border:1px solid var(--border); border-radius:999px; font-size:13px; background:white}
+  .search-wrap{position:relative}
+  .search-wrap span{position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--faint); font-size:13px}
+  .toc{overflow:auto; padding:10px 8px 14px}
+  .toc h3{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin:12px 8px 6px}
+  .toc a{display:block; padding:6px 10px; border-radius:8px; font-size:13px; color:var(--muted); line-height:1.35}
+  .toc a.active{background:var(--accent-soft); color:var(--accent-2); font-weight:600}
+  .toc a:hover{background:var(--surface-2); color:var(--text); text-decoration:none}
+  .toc .sub{padding-left:14px; border-left:1px dashed var(--border); margin-left:10px}
+  /* Main */
+  .content{min-width:0}
+  .hero{background:linear-gradient(180deg,white, #f8fafc); border:1px solid var(--border); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow)}
+  .hero h2{margin:0 0 8px; font-size:30px; letter-spacing:-.03em; line-height:1.15}
+  .hero p.lead{margin:0; color:var(--muted); font-size:15px; max-width:72ch}
+  .badges{margin-top:16px; display:flex; flex-wrap:wrap; gap:8px}
+  .badge{font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:white}
+  .badge.b-green{border-color:#a7f3d0; background:#ecfdf5; color:#065f46}
+  .badge.b-blue{border-color:#bae6fd; background:#eff6ff; color:#0c4a6e}
+  .badge.b-violet{border-color:#ddd6fe; background:#f5f3ff; color:#5b21b6}
+  .badge.b-amber{border-color:#fde68a; background:#fffbeb; color:#92400e}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px}
+  @media(max-width:720px){.grid-3{grid-template-columns:1fr}}
+  .stat{background:white; border:1px solid var(--border); border-radius:12px; padding:14px}
+  .stat strong{font-size:22px}
+  .stat span{display:block; font-size:12px; color:var(--muted)}
+  /* Section */
+  section{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:26px; margin-top:18px; box-shadow:var(--shadow)}
+  section h2{margin:0 0 6px; font-size:22px; letter-spacing:-.02em}
+  section h2 .anchor{font-size:13px; color:var(--faint); font-weight:400; margin-left:8px}
+  section h3{margin:22px 0 8px; font-size:16px}
+  section h4{margin:18px 0 6px; font-size:14px; color:#1e293b}
+  .eyebrow{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-2); font-weight:800; margin-bottom:6px}
+  .muted{color:var(--muted)} .small{font-size:13px}
+  .callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:12px 14px; border-radius:8px; font-size:13px; margin:12px 0}
+  .callout.warn{border-color:var(--amber); background:#fffbeb}
+  .callout.ok{border-color:var(--green); background:#ecfdf5}
+  .callout.violet{border-color:var(--violet); background:#f5f3ff}
+  /* Code */
+  pre{background:var(--code-bg); color:var(--code-fg); padding:14px 16px; border-radius:12px; overflow:auto; font-size:13px; line-height:1.6; border:1px solid #1e293b; position:relative}
+  code.inline{background:#f1f5f9; border:1px solid var(--border); padding:2px 6px; border-radius:6px; font-size:12.5px; color:#0f172a}
+  .code-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px}
+  .code-head span{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:700}
+  .copy{font-size:11px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:white; cursor:pointer}
+  /* Tables */
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:10px 0}
+  th,td{border:1px solid var(--border); padding:10px 10px; text-align:left; vertical-align:top}
+  th{background:var(--surface-2); font-size:12px; letter-spacing:.04em; text-transform:uppercase}
+  tr:nth-child(even) td{background:#f8fafc}
+  /* Diagram */
+  .diagram{background:#0f172a; color:#cbd5e1; border-radius:12px; padding:16px; font-size:12px; line-height:1.5; overflow:auto}
+  .diagram b{color:white}
+  /* Steps */
+  .step{border:1px solid var(--border); border-radius:12px; padding:16px; margin:12px 0; background:white}
+  .step-head{display:flex; gap:12px; align-items:flex-start}
+  .step-num{width:32px; height:32px; border-radius:999px; background:var(--text); color:white; display:grid; place-items:center; font-weight:800; font-size:13px; flex:0 0 32px; margin-top:2px}
+  .step h4{margin:0 0 4px}
+  /* File tree */
+  .tree{font-size:13px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:14px; line-height:1.7}
+  .tree b{color:var(--text)}
+  /* Print */
+  @media print{
+    .topbar,.sidebar{ display:none !important}
+    .layout{grid-template-columns:1fr; padding:0}
+    section{break-inside:avoid; box-shadow:none}
+    pre{white-space:pre-wrap}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">PW</div>
+      <div>
+        <h1>Automation Portfolio — Build & Reference Guide</h1>
+        <p>Playwright + TypeScript · SauceDemo + DemoQA · API · Visual · a11y · Allure · Multi-Env CI</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="ver">v1.0 · 2026-09-18 · offline HTML</span>
+      <button class="btn" onclick="window.print()">🖨 Print / Save PDF</button>
+      <button class="btn btn-primary" onclick="document.getElementById('rebuild').scrollIntoView({behavior:'smooth'})">Start Rebuild →</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar TOC -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="search-wrap"><span>⌕</span><input id="tocFilter" placeholder="Filter sections…" oninput="filterTOC(this.value)"></div>
+      <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
+        <span class="ver" style="font-size:11px">Type: ESM · private:true · testDir: tests</span>
+      </div>
+    </div>
+    <nav class="toc" id="toc">
+      <h3>Guide</h3>
+      <a href="#overview">1 — Overview</a>
+      <a href="#architecture">2 — Architecture at a Glance</a>
+      <a href="#stack">3 — Tech Stack & Versions</a>
+      <a href="#repo-map">4 — Repository Map</a>
+      <a href="#prereqs">5 — Prerequisites</a>
+      <a href="#rebuild">6 — Step-by-Step Rebuild</a>
+      <div class="sub">
+        <a href="#s1-init">6.1 Init Project</a>
+        <a href="#s2-deps">6.2 Dependencies</a>
+        <a href="#s3-ts">6.3 TypeScript & Aliases</a>
+        <a href="#s4-pw">6.4 Playwright Config</a>
+        <a href="#s5-env">6.5 Environment Config</a>
+        <a href="#s6-envfiles">6.6 Env Files & Secrets</a>
+        <a href="#s7-pom">6.7 Page Objects</a>
+        <a href="#s8-fixtures">6.8 Fixtures</a>
+        <a href="#s9-utils">6.9 Utils (API, Seed, Theme)</a>
+        <a href="#s10-factories">6.10 Test Data Factories</a>
+        <a href="#s11-suites">6.11 Test Suites</a>
+        <a href="#s12-cicd">6.12 CI/CD Workflows</a>
+        <a href="#s13-reporting">6.13 Reporting</a>
+        <a href="#s14-verify">6.14 Verify</a>
+      </div>
+      <h3>Reference — Front-End</h3>
+      <a href="#fe-pom">7 — Page Object Model</a>
+      <a href="#fe-fixtures">8 — Fixtures & Hooks</a>
+      <a href="#fe-visual">9 — Visual Regression</a>
+      <a href="#fe-a11y">10 — Accessibility</a>
+      <a href="#fe-auth">11 — Auth & Session</a>
+      <h3>Reference — Back-End</h3>
+      <a href="#be-api">12 — API Client & Contracts</a>
+      <a href="#be-seed">13 — Seeding & Cleanup</a>
+      <a href="#be-env">14 — Environments & Routing</a>
+      <h3>Reference — Ops</h3>
+      <a href="#ops-config">15 — Config Reference</a>
+      <a href="#ops-cicd">16 — CI/CD Deep Dive</a>
+      <a href="#ops-commands">17 — Commands Cheat Sheet</a>
+      <a href="#ops-gotchas">18 — Gotchas & Troubleshooting</a>
+      <a href="#ops-roadmap">19 — Roadmap & Extensions</a>
+      <a href="#appendix">20 — Appendix & File Inventory</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="content">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="eyebrow">Single-package portfolio · No monorepo · ESM</div>
+      <h2>Build it from scratch — then use it as a daily reference.</h2>
+      <p class="lead">This document is both a <b>sequential rebuild manual</b> (follow §6 top-to-bottom on an empty folder) and a <b>front-end / back-end reference</b> (jump via the Table of Contents). Every file path, env key, project name, and CLI command matches the actual repository as of <code class="inline">playwright.config.ts:22</code> <code class="inline">config/environments.ts:9</code> <code class="inline">fixtures/test-fixtures.ts:22</code>.</p>
+      <div class="badges">
+        <span class="badge b-green">Chromium · Firefox · WebKit · Mobile</span>
+        <span class="badge b-blue">Visual · API · a11y</span>
+        <span class="badge b-violet">Allure · HTML · JUnit</span>
+        <span class="badge b-amber">ENV = dev | staging | prod</span>
+        <span class="badge">Zod · faker · axe-core</span>
+      </div>
+      <div class="grid-3">
+        <div class="stat"><strong>6</strong><span>Page Objects (Base + 5 POMs)</span></div>
+        <div class="stat"><strong>9</strong><span>Playwright projects (setup, 4 browsers, visual×2, api, a11y)</span></div>
+        <div class="stat"><strong>4</strong><span>CI workflows (test matrix + visual + Allure Pages + Release)</span></div>
+      </div>
+      <div class="callout" style="margin-top:16px"><b>How to use:</b> New build → read §6 linearly. Daily work → use the TOC to jump to §7–§20. Interview walk-through → start at §2 (Architecture) then §7 (POM) and §12 (API).</div>
+    </div>
+
+    <!-- 1 Overview -->
+    <section id="overview">
+      <div class="eyebrow">Section 1</div>
+      <h2>Overview <span class="anchor">— what this app is and isn't</span></h2>
+      <p><b>What it is:</b> A production-grade <b>Playwright + TypeScript</b> automation portfolio that tests <b>two real applications under test (AUTs)</b> — <a href="https://www.saucedemo.com">SauceDemo</a> (e-commerce checkout) and <a href="https://demoqa.com/automation-practice-form">DemoQA Practice Form</a> (form with file upload, date picker, react-select, modal) — plus <b>API</b> (jsonplaceholder / reqres), <b>visual regression</b>, <b>accessibility (axe-core)</b>, <b>Allure Reporting</b>, and <b>multi-environment</b> execution.</p>
+      <p><b>What it is not:</b> Not a product backend. There is no app server to run — the "back-end" in this repo is the <b>test-side API layer</b> (<code class="inline">utils/apiClient.ts</code>, <code class="inline">utils/seedHelper.ts</code>, <code class="inline">config/environments.ts</code>) that talks to external public APIs per environment. There is no database to migrate.</p>
+      <table>
+        <tr><th style="width:28%">Capability</th><th>Demonstrated by</th><th>Where</th></tr>
+        <tr><td>Strict TypeScript, POM, fixtures, <code class="inline">data-test</code> locators</td><td>Login → Inventory → Cart → Checkout flow</td><td><code class="inline">pages/*</code>, <code class="inline">fixtures/test-fixtures.ts</code></td></tr>
+        <tr><td>Second AUT proves AUT-agnostic design</td><td>DemoQA form (ad blocking, date keyboard, react-select)</td><td><code class="inline">pages/DemoQAPracticeFormPage.ts</code></td></tr>
+        <tr><td>Visual regression with masking & responsive</td><td><code class="inline">toHaveScreenshot</code> + <code class="inline">mask</code> + viewport</td><td><code class="inline">tests/visual/*</code></td></tr>
+        <tr><td>Accessibility WCAG 2.1</td><td>axe-core, critical/serious gate</td><td><code class="inline">tests/a11y/a11y.spec.ts</code></td></tr>
+        <tr><td>API + contract validation</td><td>GET/POST, Zod schemas, chaining, 404 handling</td><td><code class="inline">tests/api/api.spec.ts</code>, <code class="inline">utils/apiClient.ts</code></td></tr>
+        <tr><td>Test data isolation</td><td>faker factories + API seeding + hybrid cleanup</td><td><code class="inline">test-data/factories/*</code></td></tr>
+        <tr><td>Multi-env (dev/staging/prod) + CI matrix</td><td>ENV switch, per-env apiBaseURL, GH Actions matrix</td><td><code class="inline">config/environments.ts</code>, <code class="inline">.github/workflows/playwright.yml</code></td></tr>
+        <tr><td>Reporting</td><td>HTML + JUnit + Allure → Pages & Releases</td><td><code class="inline">playwright.config.ts:28-33</code></td></tr>
+      </table>
+      <div class="callout ok"><b>Portfolio pitch (30 sec):</b> "I built a Playwright + TS framework that covers E2E on two live sites, visual and a11y, API with Zod contracts, faker factories with per-env seeding, and a CI matrix that publishes Allure to Pages — all behind a clean POM/fixture layer. Ask me to walk any layer."</div>
+    </section>
+
+    <!-- 2 Architecture -->
+    <section id="architecture">
+      <div class="eyebrow">Section 2</div>
+      <h2>Architecture at a Glance</h2>
+      <div class="diagram"><pre style="margin:0; background:transparent; border:0; color:#cbd5e1; padding:0">
+<b style="color:#7dd3fc">Users / CI</b> ──► <b>Playwright Runner</b> (projects: chromium/firefox/webkit/mobile + visual/api/a11y + setup)
+        │
+        ├─► <b>Fixtures</b>  fixtures/test-fixtures.ts  ── extends base with loginPage/inventoryPage/cartPage/checkoutPage + authenticatedPage + seededCustomer
+        │
+        ├─► <b>POM Layer</b>  pages/BasePage → LoginPage · InventoryPage · CartPage · CheckoutPage · DemoQAPracticeFormPage
+        │         uses data-test / stable selectors, expect assertions, no raw page.locator in specs
+        │
+        ├─► <b>Config</b>  config/environments.ts (ENV → baseURL/apiBaseURL)  +  playwright.config.ts (baseURL, reporters, projects, expect thresholds)
+        │         env loading: .env then .env.${ENV} override:true   +   override via BASE_URL / API_BASE_URL
+        │
+        ├─► <b>Utils</b>  utils/apiClient.ts (Zod UserSchema, per-env base) · utils/seedHelper.ts (seed/cleanup, prod no-op) · utils/helpers.ts · utils/theme.ts (dark-mode WIP)
+        │
+        ├─► <b>Test Data</b>  test-data/factories/customerFactory.ts (faker)  +  test-data/users.ts (legacy hardcoded, being migrated)
+        │
+        └─► <b>AUTs & APIs (external, not in repo)</b>
+              • SauceDemo  https://www.saucedemo.com  (all envs, baseURL)
+              • DemoQA     https://demoqa.com/automation-practice-form  (chromium-only)
+              • API dev/prod: https://jsonplaceholder.typicode.com  (ephemeral, POST /posts)
+              • API staging:  https://reqres.in/api               (POST/DELETE /api/users, 204)
+        <b style="color:#86efac">Outputs</b>: playwright-report/  allure-results/ → allure-report/  test-results/junit.xml  +  screenshots (visual baselines in tests/visual/**/*-snapshots/)
+      </pre></div>
+      <h3>Request Flow (per test)</h3>
+      <ol class="small">
+        <li><code class="inline">ENV</code> resolved in <code class="inline">playwright.config.ts:6-8</code> → <code class="inline">getEnvConfig()</code> / <code class="inline">getBaseURL()</code> → <code class="inline">baseURL</code> injected into <code class="inline">use</code>.</li>
+        <li>Fixture creates POMs (lazy, per-worker isolated). <code class="inline">authenticatedPage</code> logs in via <code class="inline">LoginPage.loginWithEnvDefaults()</code>; <code class="inline">seededCustomer</code> calls <code class="inline">seedCustomerViaAPI</code> → <code class="inline">ApiClient.createUser</code> → Zod parse → returns <code class="inline">{...customer, id, seeded}</code>; teardown → <code class="inline">cleanupCustomer</code>.</li>
+        <li>Spec drives POM methods only (no direct locators). Assertions live in POM or spec with <code class="inline">expect</code>.</li>
+        <li>Reports emitted per <code class="inline">reporter: [html, junit, allure-playwright, list]</code>; trace/screenshot/video on failure.</li>
+      </ol>
+      <div class="callout warn"><b>Key invariant:</b> E2E projects do <b>not</b> depend on <code class="inline">setup</code> — SauceDemo keeps session in <code class="inline">sessionStorage</code>, so <code class="inline">storageState</code> is written but not reused. Each spec logs in itself via <code class="inline">fixtures/test-fixtures.ts:35-41</code>. Don't add <code class="inline">dependencies:['setup']</code> to e2e projects.</div>
+    </section>
+
+    <!-- 3 Stack -->
+    <section id="stack">
+      <div class="eyebrow">Section 3</div>
+      <h2>Tech Stack & Versions</h2>
+      <table>
+        <tr><th>Layer</th><th>Package / Tool</th><th>Version (pinned)</th><th>Notes</th></tr>
+        <tr><td>Runner</td><td><code class="inline">@playwright/test</code></td><td>^1.49.0</td><td>ESM (<code class="inline">"type":"module"</code>), <code class="inline">testDir: ./tests</code></td></tr>
+        <tr><td>Language</td><td><code class="inline">typescript</code></td><td>^5.7.3</td><td><code class="inline">strict:true</code>, <code class="inline">tsc --noEmit</code> for typecheck</td></tr>
+        <tr><td>Test Data</td><td><code class="inline">@faker-js/faker</code></td><td>^9.4.0</td><td>Factories; not yet fully migrated in demoqa spec (hardcoded remains)</td></tr>
+        <tr><td>Contracts</td><td><code class="inline">zod</code></td><td>^3.23.8</td><td><code class="inline">UserSchema</code> / <code class="inline">CreateUserResponseSchema</code></td></tr>
+        <tr><td>a11y</td><td><code class="inline">@axe-core/playwright</code></td><td>^4.10.2</td><td>WCAG 2.1 tags, critical/serious gate</td></tr>
+        <tr><td>Reports</td><td><code class="inline">allure-playwright</code></td><td>^3.2.0</td><td>+ <code class="inline">allure-commandline</code> in CI</td></tr>
+        <tr><td>Env</td><td><code class="inline">dotenv</code> + <code class="inline">cross-env</code></td><td>^16.4.7 / ^7.0.3</td><td><code class="inline">cross-env ENV=...</code> for Windows compat</td></tr>
+        <tr><td>Runtime</td><td>Node</td><td>20 (CI)</td><td><code class="inline">actions/setup-node@v4</code> with npm cache</td></tr>
+      </table>
+      <h3>Path Aliases <span class="muted" style="font-weight:400">— tsconfig.json:17-22</span></h3>
+      <pre><code>{
+  "paths": {
+    "@pages/*": ["pages/*"],
+    "@fixtures/*": ["fixtures/*"],
+    "@utils/*": ["utils/*"],
+    "@data/*": ["test-data/*"]
+  }
+}</code></pre>
+      <p class="small muted">Import as <code class="inline">import { LoginPage } from '@pages/LoginPage'</code> or relative — both work; codebase currently uses relative imports.</p>
+    </section>
+
+    <!-- 4 Repo Map -->
+    <section id="repo-map">
+      <div class="eyebrow">Section 4</div>
+      <h2>Repository Map</h2>
+      <div class="tree"><pre style="margin:0; background:transparent; border:0; padding:0; color:inherit">
+automation-portfolio/
+├── <b>playwright.config.ts</b>        # 9 projects, reporters, expect thresholds, env loading (dotenv .env → .env.${ENV})
+├── <b>tsconfig.json</b>                # strict TS, ESM, path aliases @pages/@fixtures/@utils/@data
+├── <b>package.json</b>                 # type:module, private:true, scripts (test, test:dev/staging/prod, test:api/visual, typecheck)
+├── <b>.env.example</b>                 # ENV, TEST_USERNAME/PASSWORD, LOCKED_USER, VISUAL_THRESHOLD, BASE_URL override
+├── <b>config/environments.ts</b>       # environments[dev|staging|prod] → baseURL(saucedemo) + apiBaseURL(jsonplaceholder/reqres)
+├── <b>pages/</b>
+│   ├── BasePage.ts                  # goto, waitForPageLoad, assertTitleContains, takeScreenshot
+│   ├── LoginPage.ts                 # data-test locators, login(), loginWithEnvDefaults(), assertLoggedIn/Error
+│   ├── InventoryPage.ts             # sort, addToCart, cart badge, goToCart, logout, getAllPrices/Names
+│   ├── CartPage.ts                  # assertItemInCart, assertCartItemCount, removeItem, proceedToCheckout
+│   ├── CheckoutPage.ts              # fillCustomerInfo, assertOverviewPage, completeOrder, assertValidationError
+│   └── DemoQAPracticeFormPage.ts    # ad blocking, fillBasicInfo, setDateOfBirth, addSubject, uploadFile, react-select state/city, modal
+├── <b>fixtures/test-fixtures.ts</b>    # extends base: loginPage/inventoryPage/cartPage/checkoutPage + authenticatedPage + seededCustomer (with cleanup)
+├── <b>utils/</b>
+│   ├── apiClient.ts                 # ApiClient (getUsers/getUser/createUser/deleteUser), Zod schemas, isReqres(), getApiBase()
+│   ├── seedHelper.ts                # seedCustomerViaAPI, cleanupCustomer (prod no-op), getDemoQACustomer (factory-only)
+│   ├── helpers.ts                   # waitForNetworkIdle, assertUrlContains, getPriceValue, envTag()
+│   └── theme.ts                     # enableDarkMode/enableLightMode (WIP invert filter), assertDarkModeActive
+├── <b>test-data/</b>
+│   ├── users.ts                     # legacy hardcoded users/checkoutData/products (being replaced)
+│   ├── sample-upload.txt            # fixture for DemoQA upload test
+│   └── factories/
+│       ├── customerFactory.ts       # Customer/CheckoutCustomer, createCustomer(), createCheckoutCustomer()
+│       ├── index.ts                 # barrel re-export
+│       └── README.md
+├── <b>tests/</b>
+│   ├── setup/auth.setup.ts          # writes playwright/.auth/user.json (sessionStorage caveat — not reused)
+│   ├── e2e/
+│   │   ├── auth.spec.ts             # login success/locked/invalid/empty, logout, session reload
+│   │   ├── inventory.spec.ts        # display, add/remove, sort (lohi/hilo/az), cart navigation
+│   │   ├── checkout.spec.ts         # happy path, validation, cancel, tax total math
+│   │   └── demoqa-practice-form.spec.ts # form submit, upload, validation, visual smoke, a11y (axe)
+│   ├── api/api.spec.ts              # GET list/single, POST create, 404, chaining, response time, SauceDemo smoke
+│   ├── visual/
+│   │   ├── visual.spec.ts           # 7 screenshots: login/inventory/card/cart/checkout/mobile/masked
+│   │   ├── dark-mode.wip.spec.ts    # skipped WIP: visual-dark project, 3 dark screenshots + fixme
+│   │   └── visual.spec.ts-snapshots/ # committed Linux baselines (*-linux.png) — Windows suffix differs
+│   └── a11y/a11y.spec.ts            # 5 axe scans: login/inventory/cart/checkout + heading/alt manual checks
+├── <b>.github/workflows/</b>
+│   ├── playwright.yml               # matrix env[dev,staging]×project[chromium,firefox] + visual(PR-only) + api
+│   ├── visual-update.yml            # manual dispatch: --update-snapshots + commit tests/visual
+│   ├── allure-pages.yml             # push to main → Allure → GitHub Pages
+│   └── release.yml                  # tag/dispatch → chromium+api+a11y → zip reports → GitHub Release
+├── <b>docs/images/</b>                 # README baseline examples (login/inventory/cart PNGs) — also mirrored to Docs/images
+└── <b>Docs/index.html</b>              # ← this file (offline, self-contained)
+      </pre></div>
+      <div class="callout"><b>Ignored (gitignored):</b> <code class="inline">.env</code>, <code class="inline">.env.*</code>, <code class="inline">playwright/.auth/</code>, <code class="inline">playwright/.cache/</code>, <code class="inline">allure-results/</code>, <code class="inline">allure-report/</code>, <code class="inline">test-results/</code>, <code class="inline">playwright-report/</code>, <code class="inline">dist/</code>, <code class="inline">node_modules/</code>. <b>Committed:</b> <code class="inline">tests/visual/**/*-snapshots/</code> and <code class="inline">docs/images/</code>.</div>
+    </section>
+
+    <!-- 5 Prereqs -->
+    <section id="prereqs">
+      <div class="eyebrow">Section 5</div>
+      <h2>Prerequisites</h2>
+      <ul>
+        <li><b>Node.js 20+</b> (CI uses 20; 18 also works for Playwright 1.49).</li>
+        <li><b>npm</b> (lockfile is <code class="inline">package-lock.json</code> — use <code class="inline">npm ci</code>, not <code class="inline">npm install</code> in CI).</li>
+        <li>OS: Windows / macOS / Linux. Visual snapshots are <b>OS-specific</b> — Linux baselines must be generated on Linux (CI workflow does this).</li>
+        <li>No Docker, no DB, no app server — AUTs are public URLs.</li>
+      </ul>
+    </section>
+
+    <!-- 6 Rebuild -->
+    <section id="rebuild">
+      <div class="eyebrow">Section 6 — Follow linearly on an empty folder</div>
+      <h2>Step-by-Step Rebuild Guide</h2>
+      <p class="muted small">Each step includes the exact command or file content to create. Run <code class="inline">npm run typecheck</code> after §6.4 to catch drift early.</p>
+
+      <div class="step" id="s1-init">
+        <div class="step-head"><div class="step-num">1</div><div><h4>Initialize the project</h4><p class="small muted" style="margin:0">Create folder, init npm as ESM, set private.</p></div></div>
+        <pre><code>mkdir automation-portfolio && cd automation-portfolio
+npm init -y
+# edit package.json → set "type":"module", "private":true
+# set "testDir" later in playwright.config.ts:22
+git init
+# create .gitignore (see §4 / actual .gitignore — includes .env, playwright/.auth, allure-*, test-results, etc.)</code></pre>
+        <div class="callout small"><b>Gotcha:</b> <code class="inline">"type":"module"</code> matters — all imports use ESM. Don't switch to CommonJS after fixtures are written.</div>
+      </div>
+
+      <div class="step" id="s2-deps">
+        <div class="step-head"><div class="step-num">2</div><div><h4>Install dependencies</h4><p class="small muted" style="margin:0">Exact versions from package.json:39.</p></div></div>
+        <pre><code>npm i -D @playwright/test@^1.49.0 typescript@^5.7.3 @types/node@^22.10.0
+npm i -D @faker-js/faker@^9.4.0 zod@^3.23.8 @axe-core/playwright@^4.10.2 allure-playwright@^3.2.0 cross-env@^7.0.3 dotenv@^16.4.7
+
+npx playwright install --with-deps
+# Windows: --with-deps installs browser deps via PowerShell; on CI (ubuntu) it apt-gets libs.</code></pre>
+        <p class="small"><b>package.json scripts</b> to add (<code class="inline">package.json:7-26</code>):</p>
+        <pre><code>{
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:dev": "cross-env ENV=dev playwright test",
+    "test:staging": "cross-env ENV=staging playwright test",
+    "test:prod": "cross-env ENV=prod playwright test",
+    "test:visual": "playwright test --project=visual",
+    "test:visual:update": "playwright test --project=visual --update-snapshots",
+    "test:api": "playwright test tests/api",
+    "report": "playwright show-report",
+    "test:allure": "playwright test --reporter=line,allure-playwright",
+    "report:allure": "allure generate allure-results --clean -o allure-report && allure open allure-report",
+    "codegen": "playwright codegen",
+    "typecheck": "tsc --noEmit"
+  }
+}</code></pre>
+      </div>
+
+      <div class="step" id="s3-ts">
+        <div class="step-head"><div class="step-num">3</div><div><h4>TypeScript & path aliases</h4><p class="small muted" style="margin:0">tsconfig.json:17-22 — strict, ESM-compat, aliases.</p></div></div>
+        <pre><code>// tsconfig.json — copy verbatim
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext","DOM","DOM.Iterable"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@pages/*": ["pages/*"],
+      "@fixtures/*": ["fixtures/*"],
+      "@utils/*": ["utils/*"],
+      "@data/*": ["test-data/*"]
+    }
+  },
+  "include": ["**/*.ts","playwright.config.ts"],
+  "exclude": ["node_modules","dist","playwright-report","test-results"]
+}</code></pre>
+      </div>
+
+      <div class="step" id="s4-pw">
+        <div class="step-head"><div class="step-num">4</div><div><h4>Playwright config — 9 projects, reporters, thresholds</h4><p class="small muted" style="margin:0">playwright.config.ts — read the full file; key lines annotated below.</p></div></div>
+        <pre><code>import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+import { getBaseURL } from './config/environments';
+
+// Load .env then .env.${ENV} with override:true — so ENV=staging in .env selects .env.staging
+dotenv.config({ path: '.env' });
+const env = process.env.ENV || 'dev';
+dotenv.config({ path: `.env.${env}`, override: true });
+const baseURL = getBaseURL();
+
+export default defineConfig({
+  testDir: './tests',            // :22
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: [
+    ['html', { open: 'never' }],
+    ['junit', { outputFile: 'test-results/junit.xml' }],
+    ['allure-playwright', { outputFolder: 'allure-results' }],
+    ['list'],
+  ],
+  timeout: 30_000,
+  expect: { timeout: 5000, toHaveScreenshot: { maxDiffPixels: 100, threshold: 0.2 } }, // :37-39
+  use: { baseURL, trace: 'on-first-retry', screenshot: 'only-on-failure', video: 'retain-on-failure',
+         actionTimeout: 10_000, navigationTimeout: 30_000 },
+  projects: [
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },                 // writes playwright/.auth/user.json
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: [/.*visual.*\.spec\.ts/,/.*api.*\.spec\.ts/,/.*a11y.*\.spec\.ts/,/.*\.setup\.ts/] },
+    { name: 'firefox',  use: { ...devices['Desktop Firefox'] }, testIgnore: [/.*visual.*/,/.*api.*/,/.*a11y.*/,/.*\.setup\.ts/,/demoqa/i] },
+    { name: 'webkit',   use: { ...devices['Desktop Safari'] },  testIgnore: [/.*visual.*/,/.*api.*/,/.*a11y.*/,/.*\.setup\.ts/,/demoqa/i] },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] },    testIgnore: [/.*visual.*/,/.*api.*/,/.*a11y.*/,/.*\.setup\.ts/,/demoqa/i] },
+    { name: 'visual',       use: { ...devices['Desktop Chrome'] }, testMatch: /.*visual.*\.spec\.ts/, testIgnore: /.*dark-mode.*/ },
+    { name: 'visual-dark',  use: { ...devices['Desktop Chrome'], colorScheme:'dark' }, testMatch: /.*dark-mode.*\.spec\.ts/ },
+    { name: 'api',  use: { baseURL: undefined }, testMatch: /.*api.*\.spec\.ts/ },
+    { name: 'a11y', use: { ...devices['Desktop Chrome'] }, testMatch: /.*a11y.*\.spec\.ts/ },
+  ],
+});</code></pre>
+        <div class="callout warn small"><b>Do not add</b> <code class="inline">dependencies:['setup']</code> to chromium/firefox/webkit — see §11 Auth. DemoQA is chromium-only by design (flaky on other browsers + ads).</div>
+      </div>
+
+      <div class="step" id="s5-env">
+        <div class="step-head"><div class="step-num">5</div><div><h4>Environment config</h4><p class="small muted" style="margin:0">config/environments.ts:9 — baseURL always saucedemo; apiBaseURL switches.</p></div></div>
+        <pre><code>// config/environments.ts
+export type Environment = 'dev'|'staging'|'prod';
+export interface EnvConfig { baseURL:string; apiBaseURL:string; name:string; }
+export const environments: Record&lt;Environment,EnvConfig&gt; = {
+  dev:     { name:'Development', baseURL:'https://www.saucedemo.com', apiBaseURL:'https://jsonplaceholder.typicode.com' },
+  staging: { name:'Staging',     baseURL:'https://www.saucedemo.com', apiBaseURL:'https://reqres.in/api' },
+  prod:    { name:'Production',  baseURL:'https://www.saucedemo.com', apiBaseURL:'https://jsonplaceholder.typicode.com' },
+};
+export function getEnvConfig(): EnvConfig {
+  const env = (process.env.ENV as Environment) || 'dev';
+  if (!environments[env]) throw new Error(`Unknown ENV="${env}". Valid: ${Object.keys(environments).join(', ')}`);
+  return environments[env];
+}
+export function getBaseURL(): string {
+  if (process.env.BASE_URL) return process.env.BASE_URL; // override wins
+  return getEnvConfig().baseURL;
+}</code></pre>
+        <p class="small muted">Per-env behavior: dev/prod use <code class="inline">/posts</code> (jsonplaceholder, ephemeral — DELETE is no-op), staging uses <code class="inline">/api/users</code> (reqres, DELETE 204). Prod cleanup is <b>no-op</b> (dedicated tenant, nightly purge).</p>
+      </div>
+
+      <div class="step" id="s6-envfiles">
+        <div class="step-head"><div class="step-num">6</div><div><h4>Env files & secrets</h4><p class="small muted" style="margin:0">.env.example → .env → .env.${ENV}</p></div></div>
+        <pre><code># .env.example — copy to .env
+ENV=dev
+# BASE_URL=https://www.saucedemo.com
+TEST_USERNAME=standard_user
+TEST_PASSWORD=secret_sauce
+LOCKED_USER=locked_out_user
+VISUAL_THRESHOLD=0.2
+
+# Then:
+cp .env.example .env
+# Optional per-env overrides:
+# .env.dev / .env.staging / .env.prod  (all gitignored via .env.* ; !.env.example is tracked)</code></pre>
+        <div class="callout violet small"><b>Why two layers?</b> <code class="inline">playwright.config.ts:6-8</code> loads <code class="inline">.env</code> first so <code class="inline">ENV=staging</code> inside it selects <code class="inline">.env.staging</code> with <code class="inline">override:true</code>. CI can also inject <code class="inline">ENV</code> / <code class="inline">BASE_URL</code> / <code class="inline">API_BASE_URL</code> as env vars — they win over files.</div>
+      </div>
+
+      <div class="step" id="s7-pom">
+        <div class="step-head"><div class="step-num">7</div><div><h4>Page Objects — 6 files</h4><p class="small muted" style="margin:0">pages/BasePage.ts + 5 POMs. Keep selectors in POM, never in specs.</p></div></div>
+        <p class="small"><b>BasePage</b> (<code class="inline">pages/BasePage.ts:3</code>) — abstract, holds <code class="inline">page</code>, <code class="inline">goto(path='/')</code>, <code class="inline">waitForPageLoad()</code>, <code class="inline">assertTitleContains()</code>, <code class="inline">takeScreenshot()</code>.</p>
+        <p class="small"><b>LoginPage</b> — locators: <code class="inline">[data-test="username"]</code> etc., <code class="inline">goto()</code> asserts <code class="inline">.login_logo</code>, <code class="inline">login(u,p)</code>, <code class="inline">loginWithEnvDefaults()</code> reads <code class="inline">TEST_USERNAME/PASSWORD</code>, <code class="inline">assertLoggedIn()</code> checks <code class="inline">/inventory.html</code> + <code class="inline">.title → Products</code>.</p>
+        <p class="small"><b>InventoryPage</b> — <code class="inline">inventoryItem(name)</code> filter, <code class="inline">addToCartButton()</code>, <code class="inline">addToCart()</code>, <code class="inline">getCartCount()</code>/<code class="inline">assertCartCount()</code> (handles hidden badge = 0), <code class="inline">sortBy('az'|'za'|'lohi'|'hilo')</code>, <code class="inline">goToCart()</code>, <code class="inline">logout()</code>, <code class="inline">getAllPrices()</code> / <code class="inline">getAllProductNames()</code>.</p>
+        <p class="small"><b>CartPage</b> — <code class="inline">[data-test="checkout"]</code>, <code class="inline">assertItemInCart()</code>, <code class="inline">assertCartItemCount()</code>, <code class="inline">removeItem()</code>, <code class="inline">proceedToCheckout()</code> → <code class="inline">checkout-step-one.html</code>.</p>
+        <p class="small"><b>CheckoutPage</b> — firstName/lastName/postalCode inputs + continue/finish/cancel, <code class="inline">fillCustomerInfo()</code>, <code class="inline">assertOverviewPage()</code> (checkout-step-two), <code class="inline">assertTotalPriceVisible()</code>, <code class="inline">completeOrder()</code> → <code class="inline">Thank you for your order!</code>.</p>
+        <div class="callout small"><b>DemoQAPracticeFormPage</b> (<code class="inline">pages/DemoQAPracticeFormPage.ts:11</code>) — special: blocks <code class="inline">doubleclick/googlesyndication/adplus</code> via <code class="inline">page.route</code>, removes <code class="inline">#fixedban/footer/iframe</code> via <code class="inline">evaluate</code>, locators are <code class="inline">#firstName/#lastName/#userEmail/#userNumber</code>, gender via <code class="inline">getByText</code>, date via <code class="inline">Control+A → type → Enter</code>, subjects via <code class="inline">#subjectsInput + Enter</code>, upload via <code class="inline">setInputFiles</code>, state/city via <code class="inline">react-select</code> (<code class="inline">#state → div[id^="react-select-3-option"]</code>) and modal assert.</div>
+      </div>
+
+      <div class="step" id="s8-fixtures">
+        <div class="step-head"><div class="step-num">8</div><div><h4>Fixtures</h4><p class="small muted" style="margin:0">fixtures/test-fixtures.ts:22 — single source for POMs + auth + seeding.</p></div></div>
+        <pre><code>import { test as base } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage'; // + Inventory/Cart/Checkout
+export const test = base.extend&lt;Pages & AuthFixtures & SeededFixtures&gt;({
+  loginPage: async ({page}, use) =&gt; { await use(new LoginPage(page)); },
+  inventoryPage: async ({page}, use) =&gt; { await use(new InventoryPage(page)); },
+  cartPage: async ({page}, use) =&gt; { await use(new CartPage(page)); },
+  checkoutPage: async ({page}, use) =&gt; { await use(new CheckoutPage(page)); },
+  authenticatedPage: async ({page}, use) =&gt; {
+    const lp = new LoginPage(page); await lp.goto();
+    await lp.loginWithEnvDefaults(); await lp.assertLoggedIn(); await use();
+  },
+  seededCustomer: async ({request}, use) =&gt; {
+    const { seedCustomerViaAPI, cleanupCustomer } = await import('../utils/seedHelper');
+    const customer = await seedCustomerViaAPI(request, {});
+    await use(customer);
+    await cleanupCustomer(request, customer.id); // teardown even if test fails
+  },
+});</code></pre>
+        <p class="small">Use in specs: <code class="inline">import { test, expect } from '../../fixtures/test-fixtures'</code> — never import from <code class="inline">@playwright/test</code> directly in e2e specs (loses fixtures).</p>
+      </div>
+
+      <div class="step" id="s9-utils">
+        <div class="step-head"><div class="step-num">9</div><div><h4>Utils</h4><p class="small muted" style="margin:0">apiClient, seedHelper, helpers, theme.</p></div></div>
+        <p class="small"><b>utils/apiClient.ts</b> — <code class="inline">ApiClient(request)</code>, <code class="inline">getApiBase()</code> reads <code class="inline">API_BASE_URL || getEnvConfig().apiBaseURL</code>, <code class="inline">isReqres()</code> switches endpoints, Zod <code class="inline">UserSchema / CreateUserResponseSchema</code> validated on GET/POST, <code class="inline">getUsers()</code> unwraps <code class="inline">body.data</code> for reqres, <code class="inline">deleteUser</code> is prod-guarded and accepts 200/204/404.</p>
+        <p class="small"><b>utils/seedHelper.ts</b> — <code class="inline">seedCustomerViaAPI(request, overrides)</code> → <code class="inline">createCustomer()</code> → per-env payload (<code class="inline">{name,job,email}</code> for reqres else <code class="inline">{title,body,userId:1}</code>) → <code class="inline">ApiClient.createUser</code> → <code class="inline">{...customer, id, seeded:true}</code>; <code class="inline">cleanupCustomer</code> no-ops in prod else best-effort DELETE; <code class="inline">getDemoQACustomer(overrides)</code> forces <code class="inline">state:NCR city:Delhi</code>.</p>
+        <p class="small"><b>utils/helpers.ts</b> — <code class="inline">waitForNetworkIdle</code>, <code class="inline">assertUrlContains</code>, <code class="inline">getPriceValue</code>, <code class="inline">envTag()</code>.</p>
+        <p class="small"><b>utils/theme.ts</b> — WIP dark-mode: <code class="inline">enableDarkMode(page)</code> → <code class="inline">emulateMedia({colorScheme:'dark'})</code> + injected <code class="inline">invert(0.92) hue-rotate(180deg)</code> + 200ms repaint; <code class="inline">assertDarkModeActive</code> checks <code class="inline">matchMedia('(prefers-color-scheme: dark)')</code>.</p>
+      </div>
+
+      <div class="step" id="s10-factories">
+        <div class="step-head"><div class="step-num">10</div><div><h4>Test data factories</h4><p class="small muted" style="margin:0">test-data/factories/customerFactory.ts — faker, overrides, DemoQA constraints.</p></div></div>
+        <pre><code>export interface Customer { firstName,lastName,email,gender,mobile,dateOfBirth,subject,hobby,address,state,city,picturePath? }
+export function createCustomer(overrides: Partial&lt;Customer&gt;={}): Customer {
+  const firstName=faker.person.firstName(), lastName=faker.person.lastName();
+  return {
+    firstName, lastName,
+    email: faker.internet.email({firstName,lastName}).toLowerCase(),
+    gender: faker.helpers.arrayElement(['Male','Female','Other']),
+    mobile: faker.string.numeric(10), // DemoQA needs 10 digits
+    dateOfBirth: '10 Jan 1990',        // static — random dates flake on react-datepicker
+    subject: faker.helpers.arrayElement(['Maths','Computer Science','Physics']),
+    hobby: faker.helpers.arrayElement(['Sports','Reading','Music']),
+    address: faker.location.streetAddress(),
+    state: 'NCR', city: 'Delhi',       // DemoQA valid pair
+    ...overrides,
+  };
+}
+export function createCheckoutCustomer(overrides) { return { ...createCustomer(overrides), postalCode: faker.location.zipCode('#####'), ...overrides }; }</code></pre>
+        <p class="small muted">Legacy <code class="inline">test-data/users.ts</code> (users, checkoutData, products) remains for SauceDemo specs; factories are the forward path. <code class="inline">test-data/sample-upload.txt</code> is the upload fixture.</p>
+      </div>
+
+      <div class="step" id="s11-suites">
+        <div class="step-head"><div class="step-num">11</div><div><h4>Test suites</h4><p class="small muted" style="margin:0">Copy each spec file — or recreate from the patterns below.</p></div></div>
+        <p class="small"><b>tests/setup/auth.setup.ts</b> — single test <code class="inline">setup('authenticate', ...)</code> logs in and writes <code class="inline">playwright/.auth/user.json</code> via <code class="inline">storageState</code>. Not consumed by e2e (see §11).</p>
+        <p class="small"><b>tests/e2e/auth.spec.ts</b> — 6 tests: valid login, locked, invalid password, empty, logout (@smoke), session reload. All via <code class="inline">loginPage</code> fixture + <code class="inline">users</code>.</p>
+        <p class="small"><b>tests/e2e/inventory.spec.ts</b> — 8 tests: display 6 items, add single/multi, remove, sort lohi/hilo/az, cart navigation.</p>
+        <p class="small"><b>tests/e2e/checkout.spec.ts</b> — 6 tests: happy path (2 items → checkout → overview → Thank you), empty validation, missing postal, cancel to cart, cancel from overview, tax math (<code class="inline">subtotal + tax ≈ total</code>).</p>
+        <p class="small"><b>tests/e2e/demoqa-practice-form.spec.ts</b> — 5 tests: valid submit (Sebastian), upload (sample-upload.txt), empty validation (3 :invalid), layout visual smoke, axe a11y (wcag2a/aa, disabled color-contrast/image-alt/label). Chromium-only.</p>
+        <p class="small"><b>tests/api/api.spec.ts</b> — 7 tests: GET list/single+schema, POST create (switches payload per apiBase), 404, chaining (create then GET /1), response &lt;2s, SauceDemo GET / smoke.</p>
+        <p class="small"><b>tests/visual/visual.spec.ts</b> — 7 screenshots: login, inventory, product card, cart with 2 items, checkout overview, mobile (375×812), masked cart badge (<code class="inline">{mask:[.shopping_cart_badge], threshold:0.2}</code>).</p>
+        <p class="small"><b>tests/a11y/a11y.spec.ts</b> — 5 axe scans: login (wcag2a/aa/21a/21aa), inventory (exclude badge, disable select-name), cart, checkout (scoped to inputs), heading hierarchy + alt text manual.</p>
+        <p class="small"><b>tests/visual/dark-mode.wip.spec.ts</b> — <code class="inline">describe.skip</code> WIP, 3 dark screenshots + 1 fixme; run with <code class="inline">--project=visual-dark --update-snapshots</code> after removing <code class="inline">.skip</code>.</p>
+      </div>
+
+      <div class="step" id="s12-cicd">
+        <div class="step-head"><div class="step-num">12</div><div><h4>CI/CD workflows</h4><p class="small muted" style="margin:0">.github/workflows — 4 files, all use Node 20.</p></div></div>
+        <p class="small">Create <code class="inline">.github/workflows/playwright.yml</code> (matrix <code class="inline">env=[dev,staging]×project=[chromium,firefox]</code> + visual PR-only + api), <code class="inline">visual-update.yml</code> (manual dispatch, --update-snapshots, commit snapshots), <code class="inline">allure-pages.yml</code> (push to main → Allure → Pages), <code class="inline">release.yml</code> (tag/dispatch → chromium+api+a11y → zip reports → Release). See §16 for full YAML.</p>
+      </div>
+
+      <div class="step" id="s13-reporting">
+        <div class="step-head"><div class="step-num">13</div><div><h4>Reporting</h4><p class="small muted" style="margin:0">HTML + JUnit + Allure, 30-day artifacts, Pages & Releases.</p></div></div>
+        <p class="small">Already configured via <code class="inline">reporter</code> in playwright.config.ts:28-33. Add <code class="inline">test.info().attach('a11y-report-*', {body: JSON.stringify(results,null,2)})</code> in a11y specs for HTML report visibility. Allure history via <code class="inline">allure-pages.yml</code> and release zips via <code class="inline">release.yml</code>.</p>
+      </div>
+
+      <div class="step" id="s14-verify">
+        <div class="step-head"><div class="step-num">14</div><div><h4>Verify</h4><p class="small muted" style="margin:0">Typecheck, run suites, update visuals on Linux.</p></div></div>
+        <pre><code>npm run typecheck          # tsc --noEmit — must be clean
+npm test -- --project=chromium --reporter=list
+npm run test:api
+npx playwright test --project=a11y
+npm run test:visual -- --update-snapshots  # local; CI Linux baselines differ — prefer Actions → Update Visual Baselines
+ENV=staging npx playwright test --project=chromium  # multi-env smoke</code></pre>
+        <div class="callout ok small"><b>Done.</b> You now have a repo that matches the original file-by-file. Commit snapshots on Linux (see §9) before opening PRs with visual changes.</div>
+      </div>
+    </section>
+
+    <!-- 7 FE POM -->
+    <section id="fe-pom">
+      <div class="eyebrow">Section 7 — Front-End Reference</div>
+      <h2>Page Object Model</h2>
+      <p class="small muted">Rule: <b>specs never use raw locators</b>. All selectors and assertions live in POMs. Specs describe <i>what</i>; POMs describe <i>how</i>.</p>
+      <h3>BasePage <span class="muted" style="font-weight:400">— pages/BasePage.ts:3</span></h3>
+      <table><tr><th>Member</th><th>Signature</th><th>Behavior</th></tr>
+        <tr><td><code class="inline">page</code></td><td><code class="inline">protected page: Page</code></td><td>Injected via constructor; all POMs extend this.</td></tr>
+        <tr><td><code class="inline">goto</code></td><td><code class="inline">goto(path='/'): Promise&lt;void&gt;</code></td><td><code class="inline">page.goto(path)</code> — uses <code class="inline">baseURL</code> from config.</td></tr>
+        <tr><td><code class="inline">waitForPageLoad</code></td><td><code class="inline">(): Promise&lt;void&gt;</code></td><td><code class="inline">waitForLoadState('domcontentloaded')</code>.</td></tr>
+        <tr><td><code class="inline">assertTitleContains</code></td><td><code class="inline">(text): Promise&lt;void&gt;</code></td><td><code class="inline">expect(page).toHaveTitle(/text/i)</code>.</td></tr>
+        <tr><td><code class="inline">takeScreenshot</code></td><td><code class="inline">(name): Promise&lt;void&gt;</code></td><td>Full-page to <code class="inline">test-results/screenshots/${name}.png</code>.</td></tr>
+      </table>
+      <h3>LoginPage <span class="muted" style="font-weight:400">— pages/LoginPage.ts:4</span></h3>
+      <table><tr><th>Locator / Method</th><th>Selector / Logic</th><th>Notes</th></tr>
+        <tr><td><code class="inline">usernameInput</code></td><td><code class="inline">[data-test="username"]</code></td><td>Stable data-test (SauceDemo convention).</td></tr>
+        <tr><td><code class="inline">passwordInput</code></td><td><code class="inline">[data-test="password"]</code></td><td></td></tr>
+        <tr><td><code class="inline">loginButton</code></td><td><code class="inline">[data-test="login-button"]</code></td><td></td></tr>
+        <tr><td><code class="inline">errorMessage</code></td><td><code class="inline">[data-test="error"]</code></td><td>Visible + text check in <code class="inline">assertLoginError</code>.</td></tr>
+        <tr><td><code class="inline">logo</code></td><td><code class="inline">.login_logo</code></td><td>Gate for <code class="inline">goto()</code> — ensures page ready.</td></tr>
+        <tr><td><code class="inline">goto()</code></td><td><code class="inline">page.goto('/') → expect(logo).toBeVisible()</code></td><td>Always await before login.</td></tr>
+        <tr><td><code class="inline">login(u,p)</code></td><td>fill + fill + click</td><td>No assert — composable.</td></tr>
+        <tr><td><code class="inline">loginWithEnvDefaults()</code></td><td>reads <code class="inline">TEST_USERNAME/PASSWORD</code> or <code class="inline">standard_user/secret_sauce</code></td><td>Used by <code class="inline">authenticatedPage</code> fixture.</td></tr>
+        <tr><td><code class="inline">assertLoginError(text)</code></td><td>visible + containText</td><td>Exact strings: <code class="inline">Epic sadface: ...</code></td></tr>
+        <tr><td><code class="inline">assertLoggedIn()</code></td><td><code class="inline">toHaveURL(/inventory.html/) + .title → Products</code></td><td>Both checks — URL + heading.</td></tr>
+      </table>
+      <h3>InventoryPage <span class="muted" style="font-weight:400">— pages/InventoryPage.ts:4</span></h3>
+      <table><tr><th>Member</th><th>Details</th></tr>
+        <tr><td><code class="inline">title / sortDropdown / cartBadge / cartLink / menuButton / logoutLink</code></td><td><code class="inline">.title</code>, <code class="inline">[data-test="product-sort-container"]</code>, <code class="inline">.shopping_cart_badge</code>, <code class="inline">.shopping_cart_link</code>, <code class="inline">#react-burger-menu-btn</code>, <code class="inline">[data-test="logout-sidebar-link"]</code></td></tr>
+        <tr><td><code class="inline">inventoryItem(name)</code></td><td><code class="inline">.inventory_item filter hasText:name</code> — key for product-scoped actions.</td></tr>
+        <tr><td><code class="inline">addToCartButton(name)</code> / <code class="inline">addToCart(name)</code></td><td>Scoped button click inside item.</td></tr>
+        <tr><td><code class="inline">getCartCount()</code> / <code class="inline">assertCartCount(n)</code></td><td>Handles hidden badge (0) vs text count; <code class="inline">assertCartCount(0) → toBeHidden()</code>.</td></tr>
+        <tr><td><code class="inline">sortBy('az'|'za'|'lohi'|'hilo')</code></td><td><code class="inline">selectOption</code> on sort dropdown.</td></tr>
+        <tr><td><code class="inline">getAllProductNames() / getAllPrices()</code></td><td><code class="inline">.inventory_item_name / .inventory_item_price → parseFloat($)</code> for sort assertions.</td></tr>
+      </table>
+      <h3>CartPage & CheckoutPage</h3>
+      <table><tr><th>POM</th><th>Key Methods</th><th>URL Guard</th></tr>
+        <tr><td><code class="inline">CartPage</code> (CartPage.ts:4)</td><td><code class="inline">assertItemInCart(name)</code> (filter), <code class="inline">assertCartItemCount(n)</code> (toHaveCount), <code class="inline">removeItem(name)</code>, <code class="inline">proceedToCheckout()</code></td><td><code class="inline">/cart.html</code> / <code class="inline">/checkout-step-one.html</code></td></tr>
+        <tr><td><code class="inline">CheckoutPage</code> (CheckoutPage.ts:4)</td><td><code class="inline">fillCustomerInfo(f,l,zip)</code> (fill×3 + click continue), <code class="inline">assertOverviewPage()</code>, <code class="inline">assertTotalPriceVisible()</code>, <code class="inline">completeOrder()</code> (finish → Thank you), <code class="inline">assertValidationError()</code></td><td><code class="inline">/checkout-step-two.html</code> / <code class="inline">/checkout-complete.html</code></td></tr>
+      </table>
+      <h3>DemoQAPracticeFormPage <span class="muted" style="font-weight:400">— pages/DemoQAPracticeFormPage.ts:11</span></h3>
+      <p class="small">The "second AUT" showcase — proves POM design is AUT-agnostic.</p>
+      <table><tr><th>Concern</th><th>Implementation</th></tr>
+        <tr><td>Ad flakiness</td><td><code class="inline">page.route('**/*doubleclick.net/**', abort)</code> + syndication + adplus; <code class="inline">evaluate → remove #fixedban/footer/iframe, hide [id^="ad-"]</code>.</td></tr>
+        <tr><td>Locators</td><td><code class="inline">#firstName/#lastName/#userEmail/#userNumber/#dateOfBirthInput/#subjectsInput/#uploadPicture/#currentAddress/#state/#city/#submit</code> + <code class="inline">getByText(gender/hobby)</code> + modal <code class="inline">#example-modal-sizes-title-lg</code>.</td></tr>
+        <tr><td>Date picker</td><td>Click → <code class="inline">Control+A → type(date) → Enter</code> + assert value contains year.</td></tr>
+        <tr><td>React-select</td><td><code class="inline">#state click → div[id^="react-select-3-option"] filter hasText(state) click</code>; city similar with <code class="inline">4-option</code>.</td></tr>
+        <tr><td>File upload</td><td><code class="inline">setInputFiles(path) → expect toHaveValue(fileName)</code>.</td></tr>
+        <tr><td>Submit</td><td>Re-remove banners, <code class="inline">scrollIntoViewIfNeeded → click({force:true})</code>.</td></tr>
+      </table>
+    </section>
+
+    <!-- 8 Fixtures -->
+    <section id="fe-fixtures">
+      <div class="eyebrow">Section 8</div>
+      <h2>Fixtures & Hooks</h2>
+      <p class="small muted">Location: <code class="inline">fixtures/test-fixtures.ts:22</code> — extends <code class="inline">base</code>. Import <code class="inline">{ test, expect }</code> from here, not from <code class="inline">@playwright/test</code>, in every e2e/visual/a11y spec.</p>
+      <table><tr><th>Fixture</th><th>Type</th><th>Lifecycle</th><th>Usage</th></tr>
+        <tr><td><code class="inline">loginPage</code></td><td>LoginPage</td><td>per-test</td><td><code class="inline">await loginPage.goto(); await loginPage.login(...)</code></td></tr>
+        <tr><td><code class="inline">inventoryPage</code></td><td>InventoryPage</td><td>per-test</td><td>After login, drive inventory actions.</td></tr>
+        <tr><td><code class="inline">cartPage</code></td><td>CartPage</td><td>per-test</td><td>Cart assertions & checkout.</td></tr>
+        <tr><td><code class="inline">checkoutPage</code></td><td>CheckoutPage</td><td>per-test</td><td>Form fill & order completion.</td></tr>
+        <tr><td><code class="inline">authenticatedPage</code></td><td>void</td><td>setup before test</td><td>Add to test signature to auto-login: <code class="inline">test('x', async({authenticatedPage, inventoryPage})=>{...})</code></td></tr>
+        <tr><td><code class="inline">seededCustomer</code></td><td>SeededCustomer</td><td>setup + teardown</td><td>Creates via API before test, deletes after (skips prod). See §13.</td></tr>
+      </table>
+      <div class="callout small"><b>Pattern:</b> <code class="inline">test.beforeEach(async ({loginPage})=>{ await loginPage.goto(); await loginPage.login(...) })</code> — explicit per-spec login, not a global <code class="inline">beforeAll</code>. Keeps tests isolated for <code class="inline">fullyParallel:true</code>.</div>
+    </section>
+
+    <!-- 9 Visual -->
+    <section id="fe-visual">
+      <div class="eyebrow">Section 9</div>
+      <h2>Visual Regression</h2>
+      <p class="small">Project: <code class="inline">visual</code> (<code class="inline">playwright.config.ts:78-82</code>) — chromium only, <code class="inline">testMatch: /.*visual.*\.spec\.ts/</code>, <code class="inline">testIgnore: /.*dark-mode.*/</code>. Separate <code class="inline">visual-dark</code> for WIP dark baselines.</p>
+      <table><tr><th>Test</th><th>Screenshot</th><th>Technique</th></tr>
+        <tr><td>login page</td><td><code class="inline">login-page.png</code></td><td>Full page, <code class="inline">maxDiffPixels:100</code></td></tr>
+        <tr><td>inventory page</td><td><code class="inline">inventory-page.png</code></td><td>After login</td></tr>
+        <tr><td>product card</td><td><code class="inline">product-card.png</code></td><td>Locator screenshot (<code class="inline">.inventory_item.first()</code>)</td></tr>
+        <tr><td>cart with items</td><td><code class="inline">cart-with-items.png</code></td><td>2 items added</td></tr>
+        <tr><td>checkout overview</td><td><code class="inline">checkout-overview.png</code></td><td>After <code class="inline">fillCustomerInfo</code></td></tr>
+        <tr><td>mobile</td><td><code class="inline">login-mobile.png</code></td><td><code class="inline">page.setViewportSize({width:375,height:812})</code> before goto</td></tr>
+        <tr><td>masked</td><td><code class="inline">inventory-masked.png</code></td><td><code class="inline">{mask:[.shopping_cart_badge], threshold:0.2}</code> — hides dynamic badge.</td></tr>
+      </table>
+      <h3>Thresholds</h3>
+      <p class="small">Global: <code class="inline">expect.toHaveScreenshot: {maxDiffPixels:100, threshold:0.2}</code> (<code class="inline">playwright.config.ts:37-39</code>). Per-test overrides allowed (dark-mode uses 150–250 & 0.3–0.35 due to invert filter).</p>
+      <h3>OS-specific baselines</h3>
+      <div class="callout warn small"><b>Critical:</b> Snapshots include OS suffix (<code class="inline">*-linux.png</code> on CI vs <code class="inline">*-win32.png</code> on Windows). Local <code class="inline">--update-snapshots</code> on Windows will <b>not</b> fix CI. Generate Linux baselines via <b>Actions → Update Visual Baselines → Run workflow</b> (<code class="inline">visual-update.yml:31</code> runs <code class="inline">--update-snapshots</code> and commits <code class="inline">tests/visual</code>). The <code class="inline">visual</code> job in CI runs only on <code class="inline">pull_request</code> and skips if no <code class="inline">*-snapshots/</code> dir exists.</div>
+      <h3>WIP — Dark Mode</h3>
+      <p class="small">Scaffold: <code class="inline">tests/visual/dark-mode.wip.spec.ts</code> (<code class="inline">describe.skip</code>) + <code class="inline">utils/theme.ts</code> + <code class="inline">visual-dark</code> project (<code class="inline">colorScheme:'dark'</code>). Technique: <code class="inline">emulateMedia({colorScheme:'dark'})</code> + injected CSS <code class="inline">html{filter:invert(0.92) hue-rotate(180deg)}</code> with <code class="inline">img,video</code> counter-invert. To activate: remove <code class="inline">.skip</code>, rename to <code class="inline">dark-mode.spec.ts</code>, run <code class="inline">npx playwright test --project=visual-dark --update-snapshots</code>.</p>
+    </section>
+
+    <!-- 10 a11y -->
+    <section id="fe-a11y">
+      <div class="eyebrow">Section 10</div>
+      <h2>Accessibility</h2>
+      <p class="small">Project: <code class="inline">a11y</code> (<code class="inline">playwright.config.ts:94-97</code>) — chromium only. Tool: <code class="inline">@axe-core/playwright</code> <code class="inline">AxeBuilder</code>.</p>
+      <pre><code>import AxeBuilder from '@axe-core/playwright';
+const results = await new AxeBuilder({ page })
+  .withTags(['wcag2a','wcag2aa']) // or + wcag21a/wcag21aa for login
+  .analyze();
+await test.info().attach('a11y-report-login', { body: JSON.stringify(results,null,2), contentType:'application/json' });
+const critical = results.violations.filter(v =&gt; ['critical','serious'].includes(v.impact!));
+expect(critical).toEqual([]); // gate — only critical/serious fail the test
+// Inventory: .exclude('.shopping_cart_badge').disableRules(['select-name'])
+// DemoQA page: .disableRules(['color-contrast','image-alt','label'])
+</code></pre>
+      <p class="small">Plus manual checks: heading hierarchy (<code class="inline">.title</code>), image <code class="inline">alt</code> on every <code class="inline">img</code>. Run: <code class="inline">npx playwright test --project=a11y</code> or <code class="inline">npx playwright test tests/a11y --reporter=html</code> to see attached JSON in HTML report.</p>
+    </section>
+
+    <!-- 11 Auth -->
+    <section id="fe-auth">
+      <div class="eyebrow">Section 11</div>
+      <h2>Auth & Session Management</h2>
+      <p class="small"><code class="inline">tests/setup/auth.setup.ts:13</code> writes <code class="inline">playwright/.auth/user.json</code> via <code class="inline">storageState</code>. <b>But SauceDemo stores session in <code class="inline">sessionStorage</code></b>, which <code class="inline">storageState</code> does not fully restore across workers — so e2e specs <b>log in themselves</b> via <code class="inline">fixtures/test-fixtures.ts:35-41</code> / <code class="inline">loginPage.loginWithEnvDefaults()</code>. The setup project is a <b>smoke that login works</b>, not a suite-wide cache.</p>
+      <pre><code>// tests/setup/auth.setup.ts
+setup('authenticate', async ({ page }) =&gt; {
+  const lp = new LoginPage(page);
+  await lp.goto(); await lp.loginWithEnvDefaults(); await lp.assertLoggedIn();
+  await expect(page.locator('.title')).toHaveText('Products');
+  await page.context().storageState({ path: 'playwright/.auth/user.json' });
+});</code></pre>
+      <div class="callout warn small"><b>Don't</b> add <code class="inline">dependencies:['setup']</code> or <code class="inline">storageState:'playwright/.auth/user.json'</code> to e2e projects — it will give a false sense of reuse and hide the real sessionStorage behavior. If you fork to an AUT that uses cookies/localStorage, then wire <code class="inline">storageState</code> into projects.</div>
+    </section>
+
+    <!-- 12 BE API -->
+    <section id="be-api">
+      <div class="eyebrow">Section 12 — Back-End Reference</div>
+      <h2>API Client & Contracts</h2>
+      <p class="small muted">Location: <code class="inline">utils/apiClient.ts:10</code> — typed wrapper around Playwright <code class="inline">request</code> with Zod, per-env baseURL.</p>
+      <pre><code>export const UserSchema = z.object({
+  id: z.union([z.number(), z.string()]),
+  email: z.string().email(),
+  name: z.string().optional(),
+});
+export const CreateUserResponseSchema = z.object({
+  id: z.union([z.number(), z.string()]),
+  name: z.string().optional(), job: z.string().optional(),
+  title: z.string().optional(), email: z.string().optional(), createdAt: z.string().optional(),
+});
+
+function getApiBase(): string { return process.env.API_BASE_URL || getEnvConfig().apiBaseURL; }
+
+export class ApiClient {
+  constructor(private request: APIRequestContext) {}
+  private get base(){ return getApiBase(); }
+  isReqres(): boolean { return this.base.includes('reqres'); }
+
+  async getUsers() {
+    const res = await this.request.get(`${this.base}/users`);
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    const users = Array.isArray(body) ? body : body.data; // reqres wraps in {data:[]}
+    return users as User[];
+  }
+  async getUser(id) {
+    const res = await this.request.get(`${this.base}/users/${id}`);
+    expect([200,404]).toContain(res.status());
+    if (res.status()===404) return null;
+    const data = (await res.json()).data || await res.json(); // unwrap
+    UserSchema.parse(data); // contract validation
+    return data;
+  }
+  async createUser(payload) {
+    const endpoint = this.isReqres() ? `${this.base}/users` : `${this.base}/posts`;
+    const res = await this.request.post(endpoint, { data: payload });
+    expect([200,201]).toContain(res.status());
+    CreateUserResponseSchema.parse(await res.json());
+    return body;
+  }
+  async deleteUser(id) {
+    if (getEnvConfig().name==='Production') return; // dedicated tenant — never delete prod
+    const endpoint = this.isReqres() ? `${this.base}/users/${id}` : `${this.base}/posts/${id}`;
+    const res = await this.request.delete(endpoint);
+    expect([200,204,404]).toContain(res.status()); // best-effort
+  }
+}</code></pre>
+      <h3>API Specs — tests/api/api.spec.ts</h3>
+      <table><tr><th>Test</th><th>Endpoint</th><th>Asserts</th></tr>
+        <tr><td>GET list</td><td><code class="inline">GET /users</code></td><td><code class="inline">ok + length &gt;0 + 200</code></td></tr>
+        <tr><td>GET single + schema</td><td><code class="inline">GET /users/1</code></td><td><code class="inline">id + email contains @</code></td></tr>
+        <tr><td>POST create</td><td>reqres: <code class="inline">POST /api/users {name,job}</code> · jsonplaceholder: <code class="inline">POST /posts {title,body,userId}</code></td><td><code class="inline">200/201 + id||createdAt</code></td></tr>
+        <tr><td>404</td><td><code class="inline">GET /users/99999</code></td><td><code class="inline">404 or empty 200</code> (jsonplaceholder quirk)</td></tr>
+        <tr><td>Chaining</td><td>POST then <code class="inline">GET /users/1 or /posts/1</code></td><td>Create ok then fetch ok (jp doesn't persist 101)</td></tr>
+        <tr><td>Response time</td><td><code class="inline">GET /users</code></td><td><code class="inline">duration &lt;2000ms</code></td></tr>
+        <tr><td>SauceDemo smoke</td><td><code class="inline">GET https://www.saucedemo.com/</code></td><td><code class="inline">200 + contains Swag Labs</code></td></tr>
+      </table>
+      <p class="small">Run API only: <code class="inline">npm run test:api</code> (<code class="inline">--project=api, baseURL:undefined</code>). Override API host: <code class="inline">API_BASE_URL=https://reqres.in/api npx playwright test --project=api</code>.</p>
+    </section>
+
+    <!-- 13 Seed -->
+    <section id="be-seed">
+      <div class="eyebrow">Section 13</div>
+      <h2>Seeding & Cleanup — Test Data Lifecycle</h2>
+      <p class="small">Location: <code class="inline">utils/seedHelper.ts:23</code>. Strategy: <b>DemoQA = factory-only</b> (no API), <b>SauceDemo/API = factory + API seeding</b>.</p>
+      <pre><code>export async function seedCustomerViaAPI(request, overrides={}): Promise&lt;SeededCustomer&gt; {
+  const customer = createCustomer(overrides);
+  const client = new ApiClient(request);
+  const payload = client.isReqres()
+    ? { name: `${customer.firstName} ${customer.lastName}`, job: customer.subject, email: customer.email }
+    : { title: `${customer.firstName} ${customer.lastName}`, body: customer.email, userId: 1 };
+  const created = await client.createUser(payload);
+  return { ...customer, id: created.id ?? `temp-${Date.now()}`, seeded: true };
+}
+export async function cleanupCustomer(request, id) {
+  if (getEnvConfig().name==='Production') { console.log('[seedHelper] skip cleanup in Production'); return; }
+  try { await new ApiClient(request).deleteUser(id); } catch(e){ console.warn('[seedHelper] cleanup failed', e); }
+}
+export function getDemoQACustomer(overrides={}): Customer {
+  return createCustomer({ state:'NCR', city:'Delhi', ...overrides });
+}</code></pre>
+      <table><tr><th>Env</th><th>apiBaseURL</th><th>POST endpoint</th><th>DELETE behavior</th><th>Cleanup</th></tr>
+        <tr><td>dev</td><td>jsonplaceholder</td><td><code class="inline">/posts</code></td><td>200/204/404 (ephemeral)</td><td>Best-effort DELETE</td></tr>
+        <tr><td>staging</td><td>reqres</td><td><code class="inline">/api/users</code></td><td>204</td><td>Best-effort DELETE</td></tr>
+        <tr><td>prod</td><td>jsonplaceholder</td><td><code class="inline">/posts</code></td><td>—</td><td><b>No-op</b> (dedicated tenant, nightly purge)</td></tr>
+      </table>
+      <p class="small">Fixture wiring: <code class="inline">fixtures/test-fixtures.ts:42-48</code> — <code class="inline">seededCustomer</code> seeds before <code class="inline">use(customer)</code> and cleans after, even on failure. DemoQA usage: <code class="inline">const c = getDemoQACustomer(); await form.fillBasicInfo(c);</code> (no request).</p>
+    </section>
+
+    <!-- 14 BE Env -->
+    <section id="be-env">
+      <div class="eyebrow">Section 14</div>
+      <h2>Environments & Routing</h2>
+      <p class="small">Single AUT host for UI (saucedemo.com) — env only switches <b>API host</b> and <b>cleanup policy</b>. Override anytime via env vars without editing files.</p>
+      <table><tr><th>Variable</th><th>Source</th><th>Priority</th><th>Example</th></tr>
+        <tr><td><code class="inline">ENV</code></td><td>.env → .env.${ENV} → process.env</td><td>Highest wins</td><td><code class="inline">ENV=staging npx playwright test --project=chromium</code></td></tr>
+        <tr><td><code class="inline">BASE_URL</code></td><td>env var</td><td>Overrides <code class="inline">getEnvConfig().baseURL</code></td><td><code class="inline">BASE_URL=https://staging.saucedemo.com npm test</code></td></tr>
+        <tr><td><code class="inline">API_BASE_URL</code></td><td>env var</td><td>Overrides <code class="inline">getEnvConfig().apiBaseURL</code></td><td><code class="inline">API_BASE_URL=https://reqres.in/api npm run test:api</code></td></tr>
+        <tr><td><code class="inline">TEST_USERNAME/PASSWORD</code></td><td>.env</td><td>Fallback <code class="inline">standard_user/secret_sauce</code></td><td>Used by <code class="inline">loginWithEnvDefaults()</code></td></tr>
+      </table>
+      <p class="small">Loading order in <code class="inline">playwright.config.ts:6-8</code>: <code class="inline">dotenv.config({path:'.env'})</code> then <code class="inline">dotenv.config({path:`.env.${env}`, override:true})</code> — so <code class="inline">ENV</code> inside <code class="inline">.env</code> selects the second file. CI matrix does <code class="inline">ENV=${{matrix.env}} npx playwright test</code> which also satisfies <code class="inline">getEnvConfig()</code>.</p>
+    </section>
+
+    <!-- 15 Ops Config -->
+    <section id="ops-config">
+      <div class="eyebrow">Section 15 — Ops Reference</div>
+      <h2>Config Reference — playwright.config.ts</h2>
+      <table><tr><th>Key</th><th>Value</th><th>Why</th></tr>
+        <tr><td><code class="inline">testDir</code></td><td><code class="inline">'./tests'</code></td><td>Single package, no monorepo.</td></tr>
+        <tr><td><code class="inline">fullyParallel</code></td><td>true</td><td>Isolation via fixtures + faker uniqueness.</td></tr>
+        <tr><td><code class="inline">forbidOnly</code></td><td><code class="inline">!!CI</code></td><td>No <code class="inline">test.only</code> on CI.</td></tr>
+        <tr><td><code class="inline">retries</code></td><td>2 on CI, 0 locally</td><td>Flake tolerance.</td></tr>
+        <tr><td><code class="inline">workers</code></td><td>1 on CI, auto locally</td><td>Deterministic CI.</td></tr>
+        <tr><td><code class="inline">reporter</code></td><td>html, junit, allure-playwright, list</td><td>HTML for humans, JUnit for dashboards, Allure for history.</td></tr>
+        <tr><td><code class="inline">expect.timeout</code></td><td>5000</td><td>Assertion timeout.</td></tr>
+        <tr><td><code class="inline">expect.toHaveScreenshot</code></td><td>{maxDiffPixels:100, threshold:0.2}</td><td>Visual tolerance.</td></tr>
+        <tr><td><code class="inline">use.trace</code></td><td>on-first-retry</td><td>Trace only on retry.</td></tr>
+        <tr><td><code class="inline">use.screenshot/video</code></td><td>only-on-failure / retain-on-failure</td><td>Artifacts for debugging.</td></tr>
+        <tr><td><code class="inline">use.baseURL</code></td><td><code class="inline">getBaseURL()</code></td><td>From env config.</td></tr>
+      </table>
+      <h3>Projects Matrix</h3>
+      <table><tr><th>Project</th><th>Device / Special</th><th>Match / Ignore</th><th>Runs in CI</th></tr>
+        <tr><td><code class="inline">setup</code></td><td>—</td><td><code class="inline">testMatch: *.setup.ts</code></td><td>Always (writes auth file)</td></tr>
+        <tr><td><code class="inline">chromium</code></td><td>Desktop Chrome</td><td>ignores visual/api/a11y/setup</td><td>Yes (matrix dev+staging)</td></tr>
+        <tr><td><code class="inline">firefox</code></td><td>Desktop Firefox</td><td>ignores visual/api/a11y/setup + /demoqa/</td><td>Yes (matrix)</td></tr>
+        <tr><td><code class="inline">webkit</code></td><td>Desktop Safari</td><td>same as firefox</td><td>No (local only)</td></tr>
+        <tr><td><code class="inline">mobile-chrome</code></td><td>Pixel 7</td><td>same as firefox</td><td>No (local / nightly idea)</td></tr>
+        <tr><td><code class="inline">visual</code></td><td>Desktop Chrome</td><td><code class="inline">testMatch visual, testIgnore dark-mode</code></td><td>PR-only (with baselines check)</td></tr>
+        <tr><td><code class="inline">visual-dark</code></td><td>Chrome + <code class="inline">colorScheme:dark</code></td><td><code class="inline">testMatch dark-mode</code></td><td>No (WIP, manual)</td></tr>
+        <tr><td><code class="inline">api</code></td><td><code class="inline">baseURL:undefined</code></td><td><code class="inline">testMatch api</code></td><td>Separate job (dev)</td></tr>
+        <tr><td><code class="inline">a11y</code></td><td>Desktop Chrome</td><td><code class="inline">testMatch a11y</code></td><td>In release job</td></tr>
+      </table>
+    </section>
+
+    <!-- 16 CI/CD -->
+    <section id="ops-cicd">
+      <div class="eyebrow">Section 16</div>
+      <h2>CI/CD Deep Dive</h2>
+      <h3>playwright.yml — Main Matrix</h3>
+      <pre><code>on: push[main,master], pull_request[main,master], workflow_dispatch(env: dev|staging|prod)
+jobs:
+  test: runs-on: ubuntu-latest, matrix env=[dev,staging]×project=[chromium,firefox]
+        steps: checkout → setup-node@20 cache:npm → npm ci → npx playwright install --with-deps
+               → ENV=${{matrix.env}} npx playwright test --project=${{matrix.project}} --reporter=html,allure-playwright,junit
+               → upload artifacts: playwright-report-*, allure-results-*, test-results-* (30d)
+  visual: if: pull_request, check baselines (find tests/visual -type d -name '*-snapshots' | grep -q .)
+          → chromium install → npx playwright test --project=visual (ENV=dev)
+          → upload visual-report (playwright-report/ + test-results/)
+  api: runs-on: ubuntu-latest → npm ci → install → ENV=dev npx playwright test --project=api</code></pre>
+
+      <h3>visual-update.yml — Baseline Generator</h3>
+      <pre><code>on: workflow_dispatch
+permissions: contents: write
+concurrency: visual-baselines-${{github.ref}}
+jobs: update: runs-on: ubuntu-latest
+  → checkout ref:${{github.ref}} → setup-node → npm ci → install chromium
+  → npx playwright test --project=visual --update-snapshots (CI=true, ENV=dev)
+  → git config bot → git add tests/visual → commit "chore: update visual snapshots" → push</code></pre>
+      <p class="small muted">Use this when CI fails with screenshot diff — it commits <code class="inline">*-linux.png</code> baselines that match CI's OS. Don't run <code class="inline">--update-snapshots</code> on Windows and push.</p>
+
+      <h3>allure-pages.yml — Pages Publish</h3>
+      <pre><code>on: push[main], workflow_dispatch
+permissions: contents:read, pages:write, id-token:write
+jobs: allure: environment github-pages
+  → checkout → setup-node → npm ci → install chromium
+  → ENV=dev npx playwright test --project=chromium --project=api --reporter=allure-playwright (continue-on-error)
+  → npm i -g allure-commandline → allure generate allure-results --clean -o allure-report
+  → configure-pages → upload-pages-artifact(allure-report) → deploy-pages</code></pre>
+      <p class="small">URL: <code class="inline">https://&lt;org&gt;.github.io/automation-portfolio/</code> (enable Pages: Settings → Pages → Source: GitHub Actions).</p>
+
+      <h3>release.yml — Release with Reports</h3>
+      <pre><code>on: push tags v*, workflow_dispatch(tag, prerelease)
+jobs: test-and-build-reports: runs-on: ubuntu-latest
+  → checkout → setup-node → npm ci → install chromium
+  → npx playwright test --project=chromium --project=api --project=a11y --reporter=html,allure-playwright,junit
+  → allure generate → mkdir release-assets → zip playwright-report / allure-report / allure-results, cp junit.xml
+  → Determine tag (inputs.tag or GITHUB_REF or report-&lt;run&gt;-&lt;date&gt;)
+  → softprops/action-gh-release@v2 with files: release-assets/* (playwright-report.zip, allure-report.zip, etc.)</code></pre>
+      <p class="small">Run: <code class="inline">gh workflow run release.yml -f tag=v1.0.0</code> or push tag <code class="inline">git tag v1.0.0 && git push origin v1.0.0</code>. Latest release is linkable from CV: <code class="inline">/releases/latest</code>.</p>
+    </section>
+
+    <!-- 17 Commands -->
+    <section id="ops-commands">
+      <div class="eyebrow">Section 17</div>
+      <h2>Commands Cheat Sheet</h2>
+      <table><tr><th>Task</th><th>Command</th><th>Notes</th></tr>
+        <tr><td>Install</td><td><code class="inline">npm ci && npx playwright install --with-deps</code></td><td>Use <code class="inline">npm ci</code> in CI</td></tr>
+        <tr><td>All tests</td><td><code class="inline">npm test</code></td><td>All projects per config</td></tr>
+        <tr><td>Single file / project</td><td><code class="inline">npx playwright test tests/e2e/checkout.spec.ts --project=chromium</code></td><td></td></tr>
+        <tr><td>Per-env</td><td><code class="inline">npm run test:dev / test:staging / test:prod</code> or <code class="inline">ENV=staging npx playwright test --project=chromium</code></td><td>Requires <code class="inline">cross-env</code> on Windows for npm scripts</td></tr>
+        <tr><td>API only</td><td><code class="inline">npm run test:api</code></td><td>→ <code class="inline">--project=api</code></td></tr>
+        <tr><td>a11y</td><td><code class="inline">npx playwright test --project=a11y</code></td><td>Chromium only</td></tr>
+        <tr><td>Visual</td><td><code class="inline">npm run test:visual</code></td><td>chromium only, threshold 0.2</td></tr>
+        <tr><td>Update visuals (local)</td><td><code class="inline">npm run test:visual:update</code></td><td>Windows suffix mismatch — prefer CI workflow</td></tr>
+        <tr><td>Dark WIP</td><td><code class="inline">npx playwright test --project=visual-dark --update-snapshots</code></td><td>After removing <code class="inline">.skip</code></td></tr>
+        <tr><td>UI mode / headed / debug</td><td><code class="inline">npm run test:ui / test:headed / test:debug</code></td><td>Playwright UI</td></tr>
+        <tr><td>Reports</td><td><code class="inline">npm run report</code> (HTML) · <code class="inline">npm run test:allure && npm run report:allure</code></td><td>Allure needs <code class="inline">allure-commandline</code></td></tr>
+        <tr><td>Typecheck</td><td><code class="inline">npm run typecheck</code></td><td><code class="inline">tsc --noEmit</code> — no lint/format (no config)</td></tr>
+        <tr><td>Codegen</td><td><code class="inline">npm run codegen</code></td><td><code class="inline">playwright codegen https://www.saucedemo.com</code></td></tr>
+      </table>
+    </section>
+
+    <!-- 18 Gotchas -->
+    <section id="ops-gotchas">
+      <div class="eyebrow">Section 18</div>
+      <h2>Gotchas & Troubleshooting</h2>
+      <table><tr><th style="width:30%">Symptom</th><th>Cause</th><th>Fix</th></tr>
+        <tr><td>Visual diff fails on CI but passes locally</td><td>OS suffix (<code class="inline">-linux.png</code> vs <code class="inline">-win32.png</code>)</td><td>Actions → Update Visual Baselines (generates Linux snapshots and commits).</td></tr>
+        <tr><td><code class="inline">storageState</code> not reused</td><td>SauceDemo uses <code class="inline">sessionStorage</code></td><td>Log in per spec via <code class="inline">loginPage</code>; don't add <code class="inline">dependencies:['setup']</code>.</td></tr>
+        <tr><td>DemoQA tests flake on firefox/webkit</td><td>Ads + react-select quirks</td><td>Chromium-only by design (<code class="inline">testIgnore: /demoqa/i</code> on other browsers).</td></tr>
+        <tr><td><code class="inline">ENV=staging npm test</code> fails on Windows</td><td>Windows <code class="inline">cmd</code> doesn't handle <code class="inline">ENV=</code> prefix</td><td>Use <code class="inline">npm run test:staging</code> (cross-env) or PowerShell <code class="inline">$env:ENV='staging'; npm test</code>.</td></tr>
+        <tr><td><code class="inline">npm run lint / format</code> errors</td><td>No ESLint/Prettier config in repo</td><td>Expected — <code class="inline">typecheck</code> is the only verify command.</td></tr>
+        <tr><td>API POST returns 101 not persisted</td><td>jsonplaceholder is fake</td><td>Chaining test fetches known <code class="inline">/posts/1</code> instead of created id.</td></tr>
+        <tr><td>Prod cleanup deletes data</td><td>Should never delete prod</td><td><code class="inline">seedHelper</code> + <code class="inline">apiClient</code> both guard <code class="inline">Production</code> — no-op.</td></tr>
+        <tr><td>Dark-mode baselines don't exist</td><td>WIP skipped suite</td><td>Remove <code class="inline">.skip</code>, run <code class="inline">--project=visual-dark --update-snapshots</code>, commit <code class="inline">*-dark.png</code>.</td></tr>
+        <tr><td>Axe reports false positives on SauceDemo</td><td>Known tech debt (select-name, color-contrast)</td><td>Use <code class="inline">.disableRules(['select-name'])</code> and <code class="inline">.exclude('.shopping_cart_badge')</code> as in <code class="inline">a11y.spec.ts</code>.</td></tr>
+      </table>
+    </section>
+
+    <!-- 19 Roadmap -->
+    <section id="ops-roadmap">
+      <div class="eyebrow">Section 19</div>
+      <h2>Roadmap & Extension Points</h2>
+      <p class="small muted">From README.md — what to build next when you fork.</p>
+      <table><tr><th>Status</th><th>Item</th><th>How to add</th></tr>
+        <tr><td>✅ Done</td><td>Second AUT (DemoQA + POM)</td><td>See <code class="inline">DemoQAPracticeFormPage.ts</code> pattern for a third AUT.</td></tr>
+        <tr><td>✅ Done</td><td>Faker factories + seeding + seededCustomer fixture</td><td>Migrate remaining hardcoded specs to <code class="inline">getDemoQACustomer()</code>.</td></tr>
+        <tr><td>🚧 Next</td><td>Mobile + cross-browser hardening</td><td>Enable <code class="inline">mobile-chrome/webkit</code> in nightly matrix; add BrowserStack connector.</td></tr>
+        <tr><td>🚧 WIP</td><td>Dark-mode visual baselines</td><td>Finish <code class="inline">dark-mode.wip.spec.ts</code> → <code class="inline">dark-mode.spec.ts</code>, add to CI visual job.</td></tr>
+        <tr><td>Up next</td><td>Contract & schema snapshot</td><td>Expand Zod schemas to full response, add snapshot API tests.</td></tr>
+        <tr><td>Up next</td><td>Performance budgets</td><td>Add <code class="inline">responseTime &lt;800ms</code> + Lighthouse CI.</td></tr>
+        <tr><td>Up next</td><td>Security smoke</td><td>XSS payload in checkout fields, lockout brute-force, storageState isolation proof.</td></tr>
+        <tr><td>Up next</td><td>Flaky quarantine</td><td><code class="inline">test.fail()</code> + Allure history + Slack webhook.</td></tr>
+      </table>
+      <div class="callout violet small"><b>Where to plug new coverage:</b> New POM in <code class="inline">pages/</code> → expose via <code class="inline">fixtures/test-fixtures.ts</code> → write spec under <code class="inline">tests/e2e</code> or <code class="inline">tests/api</code> → add project if needed in <code class="inline">playwright.config.ts</code> → wire into <code class="inline">playwright.yml</code> matrix or <code class="inline">release.yml</code>.</div>
+    </section>
+
+    <!-- 20 Appendix -->
+    <section id="appendix">
+      <div class="eyebrow">Section 20</div>
+      <h2>Appendix — File Inventory & Glossary</h2>
+      <h3>Complete file inventory (tracked)</h3>
+      <div class="tree" style="font-size:12px"><pre style="margin:0; background:transparent; border:0; padding:0; color:inherit">playwright.config.ts · tsconfig.json · package.json · package-lock.json · .env.example · .gitignore · AGENTS.md · README.md
+config/environments.ts
+pages/BasePage.ts · LoginPage.ts · InventoryPage.ts · CartPage.ts · CheckoutPage.ts · DemoQAPracticeFormPage.ts
+fixtures/test-fixtures.ts
+utils/apiClient.ts · seedHelper.ts · helpers.ts · theme.ts
+test-data/users.ts · test-data/sample-upload.txt · test-data/factories/customerFactory.ts · test-data/factories/index.ts
+tests/setup/auth.setup.ts
+tests/e2e/auth.spec.ts · inventory.spec.ts · checkout.spec.ts · demoqa-practice-form.spec.ts
+tests/api/api.spec.ts
+tests/visual/visual.spec.ts · dark-mode.wip.spec.ts · visual.spec.ts-snapshots/*-linux.png
+tests/a11y/a11y.spec.ts
+.github/workflows/playwright.yml · visual-update.yml · allure-pages.yml · release.yml
+docs/images/login-page.png · inventory-page.png · cart-page.png
+Docs/index.html (this file)
+</pre></div>
+      <h3>Glossary</h3>
+      <table><tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td>AUT</td><td>Application Under Test — here SauceDemo and DemoQA (external, not built by this repo).</td></tr>
+        <tr><td>POM</td><td>Page Object Model — selector + action + assertion encapsulation per page.</td></tr>
+        <tr><td>Fixture</td><td>Playwright <code class="inline">test.extend</code> dependency injection — POMs, auth, seeded data.</td></tr>
+        <tr><td>storageState</td><td>Playwright's cookie/localStorage snapshot — not useful for sessionStorage AUTs.</td></tr>
+        <tr><td>Zod</td><td>Runtime schema validation — contract tests for API responses.</td></tr>
+        <tr><td>Allure</td><td>Test report with history/trends — published to GitHub Pages.</td></tr>
+        <tr><td>data-test</td><td>Stable selector attribute used by SauceDemo (<code class="inline">[data-test="..."]</code>) — preferred over CSS/XPath.</td></tr>
+        <tr><td>mask</td><td>Visual regression option to ignore dynamic regions (e.g., cart badge).</td></tr>
+        <tr><td>ENV</td><td>Environment switch (dev|staging|prod) — selects apiBaseURL and cleanup policy.</td></tr>
+      </table>
+      <h3>References in this doc</h3>
+      <p class="small muted">Every <code class="inline">file:line</code> citation (e.g., <code class="inline">playwright.config.ts:22</code>) is the actual line in the repo. If you edit the repo, update the citation. The doc is intentionally <b>offline/self-contained</b> — no CDN, no external JS — so it works from <code class="inline">Docs/index.html</code> double-click or via <code class="inline">file://</code>.</p>
+      <div class="callout ok small"><b>You are done.</b> Keep this file in <code class="inline">Docs/</code> (gitignored? currently tracked — add to <code class="inline">.gitignore</code> if you want it local-only). Don't commit/push per request — it's for local rebuild and reference. Print to PDF for interviews: <code class="inline">Ctrl+P → Save as PDF</code> (print styles hide the sidebar).</div>
+      <p class="small muted" style="margin-top:18px; border-top:1px solid var(--border); padding-top:12px">Generated 2026-09-18 · Automation Portfolio · Playwright 1.49 · TypeScript 5.7 · Node 20 · Author: local build guide (no external deps). Place: <code class="inline">Docs/index.html</code> · Next: run §6 verify, then open a PR with <code class="inline">visual</code> to see the visual job.</p>
+    </section>
+  </main>
+</div>
+
+<script>
+function filterTOC(q){
+  q=(q||'').toLowerCase().trim();
+  document.querySelectorAll('#toc a').forEach(a=>{
+    const t=a.textContent.toLowerCase();
+    a.style.display = (!q || t.includes(q)) ? 'block' : 'none';
+  });
+  document.querySelectorAll('#toc h3').forEach(h=>h.style.display = q ? 'none' : 'block');
+}
+(function(){
+  const links=[...document.querySelectorAll('#toc a')];
+  const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const id='#'+e.target.id;
+        const match=links.find(l=>l.getAttribute('href')===id);
+        if(match) match.classList.add('active');
+      }
+    });
+  }, { rootMargin:'-40% 0px -50% 0px', threshold:0 });
+  sections.forEach(s=>obs.observe(s));
+  // Copy buttons for pre blocks
+  document.querySelectorAll('pre').forEach(pre=>{
+    if(pre.querySelector('.copy')) return;
+    const btn=document.createElement('button');
+    btn.className='copy'; btn.textContent='Copy';
+    btn.onclick=()=>{ navigator.clipboard.writeText(pre.innerText.replace(/^Copy\n/,'')).then(()=>{ btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1200); }); };
+    const head=document.createElement('div'); head.className='code-head';
+    const label=document.createElement('span'); label.textContent='code';
+    head.appendChild(label); head.appendChild(btn);
+    pre.style.paddingTop='8px';
+    pre.insertBefore(head, pre.firstChild);
+  });
+})();
+</script>
+</body>
+</html>
